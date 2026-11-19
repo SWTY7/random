@@ -388,8 +388,8 @@
     const code = CC.route.encode(editor.lv);
     const url = location.origin + location.pathname + '#route=' + code;
     const done = () => { toast(t('copied')); setEdStatus(url.length > 90 ? url.slice(0, 90) + '…' : url); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => prompt('Link', url));
-    else prompt('Link', url);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => setEdStatus(url));
+    else setEdStatus(url);
   }
 
   /* ---------- modals ---------- */
@@ -439,7 +439,10 @@
         showSettings();
       },
       lang: (l) => { settings.lang = l; CC.i18n.set(l); S.save(); showSettings(); if (mode === 'title') showTitle(); },
-      reset: () => { if (confirm(t('resetConfirm'))) { S.reset(); closeModal(); showTitle(); } },
+      reset: (a, el) => {
+        if (el.dataset.armed) { S.reset(); closeModal(); showTitle(); return; }
+        el.dataset.armed = '1'; el.textContent = t('resetConfirm'); el.classList.add('on');
+      },
     });
   }
 
