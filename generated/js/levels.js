@@ -258,6 +258,16 @@
 <p><b>Burnside's lemma</b> extends this idea. The number of distinct colourings equals the average number of colourings fixed by a group element. With 2 colours on a cube's faces it gives <span class="m">(64 + 3·16 + 6·8 + 6·8 + 8·4) / 24 = 240 / 24 = 10</span>. The terms count the colourings fixed by the identity, the face half-turns, the face quarter-turns, the edge half-turns and the corner turns, so there are 10 different two-coloured cubes.</p>`,
   });
 
+  L.push({
+    id: '4-4', chapter: 3, title: 'Three axes',
+    pos: cube, tokens: [0, 1, 2, 1, 2, 0], style: 'faces', labels: cubeLabels,
+    gens: cubeGens,
+    target: 'yx',
+    intro: `<p>Opposite faces now share a colour, so all you can see is which axis (up–down, left–right, front–back) points where. How many different-looking cubes are there now?</p>`,
+    insight: `<p>Only <b>6</b>, because the three axes can be permuted in <span class="m">3! = 6</span> ways. The 24 rotations collapse to 6 because the three half-turns about the face axes, together with <span class="m">e</span>, move every face to itself or to its opposite. They change nothing you can see. That set is a copy of the Klein four-group <span class="m">V₄</span>, and it is <b>normal</b>: conjugating a half-turn about an axis gives a half-turn about another axis.</p>
+<p>So the graph on the right is the Cayley graph of the <b>quotient</b> <span class="m">S₄ / V₄ ≅ S₃</span>. "Forget everything except the axes" is a <b>homomorphism</b> from the rotation group onto <span class="m">S₃</span> with kernel <span class="m">V₄</span>. By the first isomorphism theorem, <span class="m">24 / 4 = 6</span>.</p>`,
+  });
+
   /* ---------------- Chapter V: Commutators ---------------- */
   const ringGens = [
     { key: 'a', name: 'left ring', cycles: [twoSq.cyc[0]] },
