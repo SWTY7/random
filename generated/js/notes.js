@@ -32,7 +32,7 @@
   <h2>Stars</h2>
   <p>Reachable targets: ★ solve it, ★ use the fewest possible moves (computed by breadth-first search over the orbit), ★ no hints and no false "can't be done" claims.</p>
   <p>Relations (chapter VI): ★ return to the start with a word that doesn't just cancel itself, ★ use a shortest one, ★ no hints.</p>
-  <p>Unreachable targets: ★ say so, ★ no hints, ★ <i>proof, not exhaustion</i>: claim it before you have visited every reachable state.</p>
+  <p>Unreachable targets: ★ say so, ★ pick the argument that actually proves it on the first try, ★ no hints.</p>
 
   <h2>Controls</h2>
   <p><span class="kbd">1</span>–<span class="kbd">4</span> or the move's letter applies a move · <span class="kbd">Z</span> undo · <span class="kbd">0</span> reset · <span class="kbd">H</span> hint. Drag the graph to turn it and double-click it to pause the spin. Hover a dot to preview that arrangement, and <b>click a neighbouring dot</b> to walk along that edge. 🔊 in the header toggles sound.</p>

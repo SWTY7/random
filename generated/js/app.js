@@ -210,8 +210,19 @@
       say(`<div class="outcome bad"><div class="big">Actually, it can be done.</div><p>The target is in the orbit: it can be reached in ${m.par} move${m.par === 1 ? '' : 's'}. Keep looking, because the graph on the right contains it (the gold ring).</p></div>`);
       return;
     }
-    const exhausted = G.visitedAll;
-    finish({ claimed: true, exhausted });
+    // Ask for the reason: one correct argument and two plausible wrong ones.
+    const rs = G.lv.reasons.map((r, i) => ({ text: r[0], why: r[1], ok: i === 0 }));
+    const hash = [...G.lv.id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+    const order = (hash >> 2) & 1 ? [2, 1] : [1, 2];
+    order.splice(hash % 3, 0, 0); // where the correct argument goes
+    say(`<div class="outcome"><div class="big">Correct, it can't be done. But why?</div><p class="muted small">Pick the argument that actually proves it.</p>
+      <div class="reasons">${order.map((i) => `<button class="reason" data-i="${i}">${rs[i].text}</button>`).join('')}</div><div id="reason-fb"></div></div>`);
+    document.querySelectorAll('.reason').forEach((b) => b.onclick = () => {
+      const r = rs[+b.dataset.i];
+      if (r.ok) { finish({ claimed: true, reasonFirst: !G.reasonWrong }); return; }
+      G.reasonWrong = true; b.disabled = true; b.classList.add('wrong'); window.Sound.nope();
+      $('#reason-fb').innerHTML = `<p class="muted"><b>Not quite.</b> ${r.why}</p>`;
+    });
   }
 
   function checkRelation() {
@@ -229,9 +240,9 @@
     const lv = G.lv, m = G.m;
     let stars, list;
     if (lv.impossible) {
-      const s2 = G.hints === 0, s3 = !info.exhausted;
+      const s2 = !!info.reasonFirst, s3 = G.hints === 0;
       stars = 1 + (s2 ? 1 : 0) + (s3 ? 1 : 0);
-      list = [['Correct: unreachable', true], ['No hints', s2], ['Proof, not exhaustion (did not visit every state)', s3]];
+      list = [['Correct: unreachable', true], ['Right reason on the first try', s2], ['No hints', s3]];
     } else if (lv.goal === 'relation') {
       const moves = G.history.length;
       const s2 = moves === m.par, s3 = G.hints === 0 && G.falseClaims === 0;

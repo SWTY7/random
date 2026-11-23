@@ -23,7 +23,7 @@ There are 25 puzzles. 7 of them are impossible on purpose, and 3 ask for a relat
 each impossible one unlocks a proof.
 
 **Stars.** A reachable target gives: ★ solve · ★ fewest moves (exact, by breadth-first search) · ★ no hints or false claims.
-An unreachable target gives: ★ say so · ★ no hints · ★ *proof, not exhaustion* (claim it before visiting every reachable state).
+An unreachable target gives: ★ say so · ★ pick the right *reason* from three arguments (each wrong one explains where it fails) · ★ no hints.
 
 **The Lab.** Type generators in cycle notation, such as `a = (1 2 3)` and `b = (3 4 5)`. The Lab returns:
 - the group's order and a best-effort name: cyclic, every abelian group up to isomorphism, dihedral, Sₙ, Aₙ, Q₈, and ≅ S₄/S₅ by element-order profile

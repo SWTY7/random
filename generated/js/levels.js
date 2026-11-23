@@ -57,6 +57,11 @@
     pos: polygon(6), tokens: [0, 1, 2, 3, 4, 5],
     gens: [{ key: 'q', name: 'rotate 120°', cycles: [[0, 2, 4], [1, 3, 5]], rot: 120 }],
     target: [5, 0, 1, 2, 3, 4], impossible: true,
+    reasons: [
+      ['Every reachable arrangement is a turn by a multiple of 120°, and 60° is not a multiple of 120°.'],
+      ['A 60° turn would reverse the cyclic order of the tokens.', 'No turn reverses the cyclic order. The target is a plain rotation, so that is not the obstruction.'],
+      ['A hexagon has only 3 rotations.', 'A hexagon has 6 rotations (0°, 60°, …, 300°). Your move only reaches 3 of them, and that is the real point.'],
+    ],
     intro: `<p>Now there is one move, a turn by 120° of a hexagon. The target is the hexagon turned by 60°.</p>
 <p>Some targets cannot be reached. When you are convinced, press <b>Can't be done</b>. You only get credit if you're right.</p>`,
     proof: `<p>The only moves you can make are the powers of <span class="m">q</span>: <span class="m">⟨q⟩ = {e, q, q²}</span>, which is 0°, 120° and 240°. A 60° turn is not in that list, so no sequence of presses gives it.</p>
@@ -83,6 +88,11 @@
       { key: 'b', name: '+6 hours', cycles: [[0, 6], [1, 7], [2, 8], [3, 9], [4, 10], [5, 11]], rot: 180 },
     ],
     target: [9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8], impossible: true,
+    reasons: [
+      ['Every reachable turn is 4x + 6y hours, which is always even, and 3 is odd.'],
+      ['4 and 6 are both even, so they can never add up to 12.', 'They can: 4 + 4 + 4 = 12, which is just the identity. The question is whether you can make 3.'],
+      ['Moves only go forward, so you can never turn the clock backwards.', 'You can turn backwards: going back 4 hours is the same as going forward 8, which is a a. Forward moves are enough in a finite group.'],
+    ],
     intro: `<p>A clock face. Your gears add 4 hours or 6 hours. The target is the clock turned by 3 hours.</p>`,
     proof: `<p>Every reachable turn is <span class="m">4x + 6y</span> hours (mod 12), and that number is always <b>even</b>. Three is odd.</p>
 <p>The subgroup generated is <span class="m">⟨r⁴, r⁶⟩ = ⟨r^gcd(4,6)⟩ = ⟨r²⟩</span>: the six even turns. It has index 2 in <span class="m">C₁₂</span>. The odd turns form the other <b>coset</b>, <span class="m">r·⟨r²⟩</span>, and your moves can never take you from one coset to the other.</p>`,
@@ -134,7 +144,12 @@
       { key: 'f', name: 'flip', cycles: [[1, 3]] },
     ],
     target: [1, 0, 2, 3], impossible: true,
-    intro: `<p>Swap just the top two neighbours.</p>`,
+    reasons: [
+      ['Every symmetry keeps neighbouring corners neighbouring, and the target separates two neighbours.'],
+      ['The target is an odd permutation and every symmetry of the square is even.', 'Not true: the flip f = (2 4) is a single swap, which is odd. The symmetries of the square include odd permutations, so parity can’t decide this.'],
+      ['r and f commute, so you can only reach rotations of the start.', 'They don’t commute (see puzzle 2-2), and you can reach reflections too: puzzle 2-1 did exactly that.'],
+    ],
+    intro: `<p>Swap the top token with its right-hand neighbour, and leave the other two alone.</p>`,
     proof: `<p>Every symmetry of a square sends neighbouring corners to neighbouring corners. Tokens <b>A</b> and <b>D</b> start as neighbours, but in the target they are diagonally opposite.</p>
 <p>Counting tells the same story. There are <span class="m">4! = 24</span> ways to place four tokens on the corners, and the symmetries reach only <span class="m">|D₄| = 8</span> of them. The target is in one of the other two <b>cosets</b>.</p>`,
   });
@@ -147,7 +162,7 @@
     ],
     target: 'rrrf',
     intro: `<p>Now some beads share a colour, so different moves can give the <b>same-looking</b> board. Watch how small the graph is.</p>`,
-    insight: `<p><span class="m">D₆</span> has 12 elements, but only 6 different necklaces appear. One flip (through the edge midpoints between the two reds and between the two blues) leaves the start looking unchanged. It belongs to the <b>stabiliser</b>, which has 2 elements.</p>
+    insight: `<p><span class="m">D₆</span> has 12 elements, but only 6 different necklaces appear. One flip (the one whose axis passes between the two reds and between the two yellows) leaves the start looking unchanged. It belongs to the <b>stabiliser</b>, which has 2 elements.</p>
 <p><b>Orbit–stabiliser theorem:</b> <span class="m">|orbit| · |stabiliser| = |G|</span>, here <span class="m">6 · 2 = 12</span>.</p>
 <p>Because the dots are arrangements rather than group elements, this graph is no longer the Cayley graph. It is the <b>Schreier graph</b> of the action, a quotient of the Cayley graph.</p>`,
   });
@@ -186,7 +201,12 @@
       { key: 'b', name: 'cycle 1→3→4', cycles: [[0, 2, 3]] },
     ],
     target: [1, 0, 2, 3], impossible: true,
-    intro: `<p>Two 3-cycles on a square. Swap the top two tokens.</p>`,
+    reasons: [
+      ['3-cycles are even, so everything reachable is even, and a single swap is odd.'],
+      ['Each move leaves one token fixed, so some token can never move.', 'a fixes the 4th position and b fixes the 2nd, but together they move every token wherever you like.'],
+      ['The moves generate only 12 of the 24 permutations.', 'True, but that alone doesn’t say whether this target is one of the 12. You need an invariant that tells you which half it lies in.'],
+    ],
+    intro: `<p>Two 3-cycles on a square. Swap the top and right tokens, and leave the other two alone.</p>`,
     proof: `<p>Every permutation is either <b>even</b> or <b>odd</b>: the parity of the number of swaps it takes to write it. The parity doesn't depend on how you write it.</p>
 <p>A 3-cycle is even, because <span class="m">(1 2 3) = (1 3)(1 2)</span> is two swaps. Even followed by even is even, so every reachable arrangement is even. A single swap is odd.</p>
 <p>The even permutations form the <b>alternating group</b> <span class="m">A₄</span>, exactly half of <span class="m">S₄</span>: 12 elements. The graph has 12 dots, and the target lives in the other half.</p>`,
@@ -198,8 +218,8 @@
       { key: 'a', name: 'left triangle', cycles: [twoTri.cyc[0]] },
       { key: 'b', name: 'right triangle', cycles: [twoTri.cyc[1]] },
     ],
-    target: [3, 4, 2, 0, 1],
-    intro: `<p>Two triangles sharing a corner. Swap the left pair with the right pair.</p>`,
+    target: [0, 4, 3, 2, 1],
+    intro: `<p>Two triangles sharing a corner. Mirror the bow tie: swap the left pair with the right pair, top with top and bottom with bottom.</p>`,
     insight: `<p>Two 3-cycles that share one point generate <span class="m">A₅</span>, the 60 even permutations of 5 things. <span class="m">A₅</span> is the smallest <b>non-abelian simple group</b>: it has no normal subgroups except the trivial ones. It is also the rotation group of the icosahedron.</p>
 <p>Its simplicity is the reason the general quintic equation has no formula in radicals (Abel–Ruffini, via Galois theory).</p>
 <p>The graph has 60 dots and is made of triangles, one for each coset of <span class="m">⟨a⟩</span> and of <span class="m">⟨b⟩</span>.</p>`,
@@ -212,6 +232,11 @@
       { key: 'b', name: 'right triangle', cycles: [twoTri.cyc[1]] },
     ],
     target: [0, 1, 2, 4, 3], impossible: true,
+    reasons: [
+      ['Both moves are even permutations, and the target is a single swap, which is odd.'],
+      ['The token in the shared corner can never leave the centre.', 'It can: a single press of a moves it into the left triangle.'],
+      ['A₅ is simple, so it can’t contain a transposition.', 'A₅ is simple, but that isn’t the reason. Simplicity is about normal subgroups. A₅ has no transpositions because they are odd.'],
+    ],
     intro: `<p>Same bow tie. Swap just the two tokens on the right.</p>`,
     proof: `<p>Both moves are 3-cycles, which are even permutations. The target differs from the start by one swap, which is odd. Parity is an <b>invariant</b>, so 60 arrangements are reachable and the other 60 are not.</p>
 <p>The parity map <span class="m">sgn: Sₙ → {±1}</span> is a <b>homomorphism</b>, and its kernel is <span class="m">Aₙ</span>. Many impossibility proofs for puzzles, including the classic 15-puzzle, come down to a homomorphism like this one.</p>`,
@@ -244,6 +269,11 @@
     pos: cube, tokens: [0, 1, 2, 3, 4, 5], style: 'faces', labels: cubeLabels,
     gens: cubeGens,
     target: [0, 3, 2, 1, 4, 5], impossible: true,
+    reasons: [
+      ['Rotations preserve handedness (det = +1), and the target is the mirror image (det = −1).'],
+      ['Left and right are opposite faces, so they can never swap.', 'They can: turning twice about the vertical axis (y y) swaps L and R. It also swaps F and B, which the target doesn’t.'],
+      ['Every move is a 4-cycle, so parity forbids a single swap.', 'A 4-cycle is odd and so is a swap. Parity allows this target, so something else must rule it out.'],
+    ],
     intro: `<p>Swap Left and Right, keeping everything else.</p>`,
     proof: `<p>That would turn the cube into its <b>mirror image</b>. Look at the corner where Up, Front and Right meet: going around it, the faces appear clockwise in the order U → F → R. Every rotation keeps that handedness, and a reflection reverses it.</p>
 <p>In linear algebra terms, a rotation has <span class="m">det = +1</span> and a reflection has <span class="m">det = −1</span>, and det is a homomorphism. Of the <span class="m">6! = 720</span> ways to paint 6 colours on the faces, rotations relate them in groups of 24, so there are <span class="m">720 / 24 = 30</span> truly different dice. A die and its mirror image are two of the 30.</p>`,
@@ -303,7 +333,12 @@
       { key: 'b', name: 'right square', cycles: [[1, 2, 5, 4]] },
     ],
     target: [1, 0, 2, 3, 4, 5], impossible: true,
-    intro: `<p>Last puzzle. Two overlapping squares on a 2×3 grid: swap the top-left pair.</p>
+    reasons: [
+      ['The moves generate only 120 of the 720 permutations, and none of those 120 is a single swap.'],
+      ['Both moves are odd and a swap is odd, so the parity is wrong.', 'Odd matches odd, so parity allows this target. That’s what makes this puzzle tricky.'],
+      ['The two outer columns can never exchange tokens, because only the middle column is shared.', 'They can: a then b carries a token from the left column all the way to the right column.'],
+    ],
+    intro: `<p>Two overlapping squares on a 2×3 grid. Swap the first two tokens of the top row.</p>
 <p>Careful: both moves are 4-cycles, which are odd, and a swap is odd too. So parity doesn't rule it out.</p>`,
     proof: `<p>Look at the graph: <b>120</b> dots, not <span class="m">6! = 720</span>. The moves generate a group of order 120 inside <span class="m">S₆</span>. Its 25 elements of order 2 are 15 double swaps and 10 triple swaps. None is a single swap, so no invariant as simple as parity is needed. The target just isn't in the group.</p>
 <p>The group is a celebrity. It is <span class="m">PGL(2, 5)</span>, the Möbius maps <span class="m">x ↦ (ax + b)/(cx + d)</span> over the field with 5 elements, acting on the 6 points <span class="m">{0, 1, 2, 3, 4, ∞}</span>. These maps preserve <b>cross-ratios</b>, and a single swap does not. That is the real invariant.</p>

@@ -11,6 +11,7 @@ for (const lv of LEVELS) {
   const ok = (lv.goal === 'relation' ? m.relation && !lv.impossible : !!lv.impossible === !m.reachable) && lv.tokens.length === lv.pos.length && m.target.length === lv.pos.length;
   const sameMultiset = lv.tokens.slice().sort().join() === m.target.slice().sort().join();
   const names = P.analyse(m.gens).names.join(' / ');
+  if (lv.impossible && !(lv.reasons && lv.reasons.length === 3 && lv.reasons.slice(1).every((r) => r[1]))) { console.log('missing reasons', lv.id); bad++; }
   if (!ok || !sameMultiset || (m.reachable && m.par === 0)) bad++;
   console.log(
     (ok && sameMultiset ? 'ok ' : 'BAD') + ' ' + lv.id.padEnd(4) + lv.title.padEnd(26) +
