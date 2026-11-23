@@ -51,7 +51,7 @@ main { max-width: 1320px; margin: 0 auto; padding: 22px 28px 60px; }
 .lvl-title { display: inline; margin: 0; font-size: 24px; font-weight: 600; }
 .target-wrap { text-align: center; font-family: var(--sans); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .target-wrap canvas { width: 96px; height: 96px; display: block; border: 1px dashed #d4c9b3; border-radius: 10px; background: #f8f3e8; }
-#board { width: 100%; max-width: 460px; aspect-ratio: 1; display: block; margin: -6px auto 4px; }
+#board { width: 100%; max-width: min(460px, calc(100vh - 340px)); min-width: 260px; aspect-ratio: 1; display: block; margin: -6px auto 4px; }
 #board.won { animation: glow 1.2s ease; }
 @keyframes glow { 0% { filter: none; } 30% { filter: drop-shadow(0 0 14px rgba(88,129,87,.6)); } 100% { filter: none; } }
 .moves { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 6px 0 12px; }
@@ -130,3 +130,5 @@ main { max-width: 1320px; margin: 0 auto; padding: 22px 28px 60px; }
 @media (max-width: 960px) { .lab-more { grid-template-columns: 1fr; } .lab-more .wide { grid-column: auto; } }
 .mute { margin-left: 18px; border: none; background: none; padding: 0 4px; font-size: 16px; }
 .mute:hover { background: none; opacity: .7; }
+.go { font-size: 16px; padding: 9px 18px; background: var(--ink); color: #fbf8f1; border-color: var(--ink); }
+.go:hover { background: #4a4740; }
