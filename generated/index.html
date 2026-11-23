@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generated: a puzzle book about groups</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%233b3a36' stroke-width='4'/%3E%3Ccircle cx='32' cy='10' r='7' fill='%23c8553d'/%3E%3Ccircle cx='51' cy='43' r='7' fill='%232f6690'/%3E%3Ccircle cx='13' cy='43' r='7' fill='%23e0a526'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/"><span class="mark">⟨g⟩</span> Generated <small>a puzzle book about groups</small></a>
+  <nav>
+    <a href="#/" data-nav="home">Puzzles</a>
+    <a href="#/lab" data-nav="lab">Lab</a>
+    <a href="#/about" data-nav="about">Notes</a>
+  </nav>
+</header>
+
+<main>
+  <section id="home" class="view"></section>
+
+  <section id="play" class="view">
+    <div class="play-grid">
+      <div class="card board-card">
+        <div class="board-head">
+          <div><span class="lvl-id"></span> <h2 class="lvl-title"></h2></div>
+          <div class="target-wrap"><canvas id="target" width="120" height="120"></canvas><span>target</span></div>
+        </div>
+        <canvas id="board" width="460" height="460"></canvas>
+        <div class="moves" id="moves"></div>
+        <div class="controls">
+          <button id="undo" title="Undo (Z)">↶ Undo</button>
+          <button id="reset" title="Reset (0)">⟲ Reset</button>
+          <button id="hint" title="Hint (H)">Hint</button>
+          <button id="claim" class="claim" title="Declare the target unreachable">Can't be done</button>
+          <span class="counter" id="counter"></span>
+        </div>
+        <div class="word" id="word"></div>
+      </div>
+
+      <div class="card lens-card">
+        <div class="lens-head"><h3 id="lens-title">Cayley graph</h3><span class="muted small">drag to turn · double-click to pause</span></div>
+        <div class="lens-wrap">
+          <canvas id="graph" width="420" height="340"></canvas>
+          <div id="tip" class="tip"></div>
+        </div>
+        <div class="legend" id="legend"></div>
+        <table class="stats" id="stats"></table>
+      </div>
+
+      <div class="card text-card">
+        <div id="intro"></div>
+        <div id="outcome"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="lab" class="view"></section>
+  <section id="about" class="view"></section>
+</main>
+
+<script src="js/perm.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/puzzle.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/board.js"></script>
+<script src="js/lab.js"></script>
+<script src="js/notes.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
