@@ -18,7 +18,7 @@ generate turns beside the board, and a marker shows where you are in it.
 | IV · Rigid motions | the rotation group of the cube (≅ S₄), handedness and det, Burnside's lemma |
 | V · Commutators | [a, b] makes a 3-cycle, conjugation aims it, and an exotic group: PGL(2, 5) ≅ S₅ acting on 6 points |
 
-There are 21 puzzles, and 7 of them are impossible on purpose. Each solved puzzle unlocks a short write-up of what just happened, and
+There are 21 puzzles, and 7 of them are impossible on purpose. Once you've solved a level, *Random target* gives you endless variations on it. Each solved puzzle unlocks a short write-up of what just happened, and
 each impossible one unlocks a proof.
 
 **Stars.** A reachable target gives: ★ solve · ★ fewest moves (exact, by breadth-first search) · ★ no hints or false claims.
@@ -29,6 +29,11 @@ An unreachable target gives: ★ say so · ★ no hints · ★ *proof, not exhau
 - whether it is abelian, the size of its centre, and how many elements are even
 - a histogram of element orders, and the Lagrange divisors that actually occur as orders
 - a drawn Cayley graph (up to 240 elements)
+- the **subgroup lattice** as a Hasse diagram (up to order 120), with normal subgroups marked. Click a subgroup to colour the Cayley graph by its cosets.
+- **conjugacy classes** and the class equation, with cycle types
+- the **cycle index** and Burnside/Pólya counts of k-colourings up to symmetry
+- the **Cayley table** as a coloured Latin square (up to order 60)
+- **Play it as a puzzle**, which turns any group you type into a playable board
 - a word evaluator: `abAB` or `(ab)^3`, where capitals are inverses
 - a membership test that also gives the **shortest word** for an element
 
@@ -41,6 +46,7 @@ Drag the graph to turn it, double-click it to pause, and hover a dot to preview 
 
 - `js/perm.js`: permutations, BFS over orbits and groups, and group identification. It runs in the browser and in Node.
 - `js/levels.js`: the puzzles and their texts. `js/puzzle.js` turns a level into a solved model: orbit, distances to the target, and par.
+- `js/lattice.js`: finds every subgroup by closing cyclic subgroups under joins, plus normality and cosets.
 - `js/graph.js`: a small 3D force-directed graph viewer. `js/board.js` draws the board. `js/app.js` is the UI. `js/lab.js` is the Lab.
 - `tools/check.js`: `node tools/check.js` checks that every "impossible" level is really impossible and every other level is reachable, and prints |G|, orbit, stabiliser and par.
 

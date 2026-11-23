@@ -103,6 +103,7 @@
     <div class="lab-more">
       <div class="card"><h3>Conjugacy classes</h3><div id="lab-classes"></div></div>
       <div class="card"><h3>Counting colourings (Burnside / Pólya)</h3><div id="lab-polya"></div></div>
+      <div class="card wide"><h3>Subgroup lattice</h3><div id="lab-lattice"></div></div>
       <div class="card wide"><h3>Cayley table</h3><div id="lab-table"></div></div>
     </div>`;
     const ta = root.querySelector('#lab-gens');
@@ -155,7 +156,7 @@
       view.visited = new Set(); view.marks = { 0: { ring: '#e0a526' } };
       document.querySelector('#lab-legend').innerHTML = names.map((n, i) => `<span><i style="background:${COLORS[i % COLORS.length]}"></i>${n}</span>`).join('') + '<span><i class="dot" style="border:2.5px solid #e0a526;width:12px;height:12px"></i>identity e</span>';
     } else { view.N = 0; document.querySelector('#lab-legend').innerHTML = ''; }
-    classes(); polya(); table();
+    classes(); polya(); table(); lattice();
     word(); member();
   }
 
@@ -226,6 +227,57 @@
       }
     }
     box.innerHTML = h + '</div>';
+  }
+
+
+  /* ---- subgroup lattice (Hasse diagram) ---- */
+  let subs = null, selected = -1;
+  function lattice() {
+    const box = document.querySelector('#lab-lattice');
+    selected = -1; subs = null;
+    if (A.N > 120) { box.innerHTML = '<p class="muted">Shown for groups of order at most 120; this one has ' + A.N + ' elements.</p>'; return; }
+    subs = window.Lattice.subgroups(A, 1500);
+    if (!subs) { box.innerHTML = '<p class="muted">Too many subgroups to draw.</p>'; return; }
+    const orders = [...new Set(subs.map((x) => x.order))].sort((a, b) => a - b);
+    const layers = orders.map((o) => subs.filter((x) => x.order === o));
+    const W = Math.max(640, Math.min(1200, Math.max(...layers.map((l) => l.length)) * 34 + 80)), LH = 64, H = layers.length * LH + 30;
+    // x positions: barycentre of the covered subgroups, then spread evenly
+    const X = new Array(subs.length).fill(W / 2), Y = new Array(subs.length);
+    layers.forEach((layer, li) => {
+      layer.forEach((S) => { Y[S.id] = H - 25 - li * LH; if (S.cover.length) S.bx = S.cover.reduce((t, j) => t + X[j], 0) / S.cover.length; else S.bx = W / 2; });
+      layer.sort((a, b) => a.bx - b.bx);
+      const gap = (W - 80) / Math.max(1, layer.length);
+      layer.forEach((S, k) => { X[S.id] = layer.length === 1 ? W / 2 : 40 + gap * (k + 0.5); });
+    });
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto" id="lat-svg">`;
+    subs.forEach((S) => S.cover.forEach((j) => { svg += `<line x1="${X[S.id]}" y1="${Y[S.id]}" x2="${X[j]}" y2="${Y[j]}" stroke="#d6ccb7" stroke-width="1" data-a="${S.id}" data-b="${j}"/>`; }));
+    orders.forEach((o, li) => { svg += `<text x="6" y="${H - 21 - li * LH}" font-size="11" fill="#a39b8b" font-family="system-ui">${o}</text>`; });
+    subs.forEach((S) => {
+      svg += `<circle cx="${X[S.id]}" cy="${Y[S.id]}" r="${S.order === 1 || S.order === A.N ? 8 : 6.5}" fill="${S.normal ? '#3b3a36' : '#fbf8f1'}" stroke="#3b3a36" stroke-width="1.3" data-s="${S.id}" style="cursor:pointer"><title>order ${S.order}${S.normal ? ' · normal' : ''}</title></circle>`;
+    });
+    svg += '</svg>';
+    const nNormal = subs.filter((x) => x.normal).length;
+    box.innerHTML = `<p class="muted small" style="margin:0 0 6px">All <b>${subs.length}</b> subgroups, arranged by order (left margin), with a line wherever one subgroup sits directly inside another. Filled dots are the <b>${nNormal}</b> normal subgroups. <b>Click a subgroup</b> to colour the Cayley graph above by its cosets.</p>${svg}<div class="res" id="lat-info">Lagrange's theorem says every order in the margin divides ${A.N}. Its converse is false: try A₄, which has no subgroup of order 6.</div>`;
+    box.querySelectorAll('circle').forEach((c) => c.addEventListener('click', () => pickSub(+c.dataset.s)));
+  }
+  const subNames = new Map();
+  function pickSub(i) {
+    selected = i;
+    const S = subs[i];
+    document.querySelectorAll('#lat-svg circle').forEach((c) => { const on = +c.dataset.s === i; c.setAttribute('stroke', on ? '#c8553d' : '#3b3a36'); c.setAttribute('stroke-width', on ? 3 : 1.3); });
+    document.querySelectorAll('#lat-svg line').forEach((l) => { const on = +l.dataset.a === i || +l.dataset.b === i; l.setAttribute('stroke', on ? '#c8553d' : '#d6ccb7'); });
+    if (!subNames.has(S)) {
+      const gens = S.gens.map((g) => A.elements[g]);
+      const a = gens.length ? P.analyse(gens) : { names: ['trivial'], N: 1 };
+      subNames.set(S, a.names.length ? a.names[0] : 'order ' + S.order);
+    }
+    const cs = window.Lattice.cosets(A, S);
+    const marks = {};
+    for (let x = 0; x < A.N; x++) marks[x] = { fill: 'hsl(' + Math.round((cs.label[x] * 137.508) % 360) + ',55%,' + (55 + (cs.label[x] % 3) * 8) + '%)' };
+    if (A.N <= 240 && view) { view.marks = marks; view.marks[0] = Object.assign({}, marks[0], { ring: '#e0a526' }); }
+    document.querySelector('#lat-info').innerHTML = `H = ⟨${S.gens.map((g) => P.toCycles(A.elements[g])).join(', ') || 'e'}⟩ ≅ ${subNames.get(S)} · |H| = ${S.order} · index [G : H] = ${A.N / S.order}` +
+      `<br>${S.normal ? '<b>Normal</b>: gH = Hg for every g, so the cosets form the quotient group G/H, of order ' + A.N / S.order + '.' : 'Not normal: some conjugate gHg⁻¹ is a different subgroup, so the left and right cosets differ.'}` +
+      `<br><span class="muted">The Cayley graph above now shows the ${cs.count} cosets in ${cs.count} colours, all of the same size ${S.order}. This is Lagrange's theorem.</span>`;
   }
 
   function playIt() {
