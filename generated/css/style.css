@@ -100,7 +100,7 @@ main { max-width: 1320px; margin: 0 auto; padding: 22px 28px 60px; }
 .res { font-family: "Cambria Math", var(--serif); margin-top: 8px; padding: 8px 10px; background: #f3ede0; border-radius: 8px; min-height: 2.2em; overflow-wrap: anywhere; }
 .gname { font-size: 26px; font-weight: 600; margin: 0 0 4px; }
 .hist { display: flex; align-items: flex-end; gap: 6px; height: 90px; margin: 8px 0 18px; }
-.hist div { flex: 1; max-width: 46px; background: #d9cdb4; border-radius: 4px 4px 0 0; position: relative; min-height: 2px; }
+.hist div { flex: 1; max-width: 46px; min-width: 14px; background: #d9cdb4; border-radius: 4px 4px 0 0; position: relative; min-height: 2px; }
 .hist div span { position: absolute; bottom: -18px; left: 0; right: 0; text-align: center; font-family: var(--sans); font-size: 11px; color: var(--muted); }
 .hist div b { position: absolute; top: -17px; left: 0; right: 0; text-align: center; font-family: var(--sans); font-size: 11px; font-weight: 500; }
 #lab-graph { width: 100%; height: 420px; display: block; cursor: grab; touch-action: none; }
@@ -137,3 +137,8 @@ main { max-width: 1320px; margin: 0 auto; padding: 22px 28px 60px; }
 .colour-by { font-family: var(--sans); font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .colour-by button { padding: 3px 9px; font-size: 12px; }
 .colour-by button.on { background: var(--ink); color: #fbf8f1; border-color: var(--ink); }
+.lab-grid > .card, .lab-more > .card { min-width: 0; }
+.stats td { overflow-wrap: anywhere; }
+.hist { overflow: hidden; padding: 20px 0 18px; height: auto; min-height: 120px; box-sizing: border-box; }
+.hist.dense { gap: 2px; }
+.hist.dense div { min-width: 2px; }

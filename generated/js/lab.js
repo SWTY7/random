@@ -157,6 +157,7 @@
       <p class="muted small" style="margin:-4px 0 6px">Computed in ${ms} ms. ${a.N <= 240 ? 'Hover a node to see that element. Edges show right-multiplication by each generator.' : 'With more than 240 elements the Cayley graph is too dense to draw.'}</p>`;
     const canvas = document.querySelector('#lab-graph');
     canvas.style.display = a.N <= 240 ? 'block' : 'none';
+    document.querySelector('#lab-colour').style.display = a.N <= 240 ? '' : 'none';
     if (a.N <= 240) {
       const edges = [];
       a.elements.forEach((x, i) => a.gens.forEach((g, gi) => { const j = a.bfs.index.get(P.key(P.compose(x, g))); if (j !== i) edges.push([i, j, gi]); }));
@@ -352,14 +353,25 @@
         <tr><td>Generator orders</td><td>${parsed.gens.map((g, i) => names_(i) + ': ' + P.order(g)).join(', ')}</td></tr>
         <tr><td>Parity</td><td>${allEven ? 'every generator is even, so G ⊆ Aₙ' : 'some generator is odd, so exactly half of G is even'}</td></tr>
       </table>
+      <h4 class="muted small" style="margin:16px 0 4px;font-family:var(--sans);text-transform:uppercase;letter-spacing:.07em">Element orders, estimated from 3000 random elements</h4>
+      ${sampleHist(ss)}
       <p class="muted small" style="margin:10px 0 0">Too many elements to list, so this was computed by the <b>Schreier–Sims algorithm</b> in ${ms} ms. It sifts random elements through a chain of stabilisers until ${ss.confidence} in a row pass. The chance of a wrong answer is below 2⁻${ss.confidence}. The word and membership tools on the left still work: membership is tested by sifting.</p>`;
     document.querySelector('#lab-graph').style.display = 'none'; view.N = 0;
+    document.querySelector('#lab-colour').style.display = 'none';
     document.querySelector('#lab-legend').innerHTML = '';
     const msg = '<p class="muted">This group is too large to list element by element, which this panel needs.</p>';
     ['#lab-classes', '#lab-polya', '#lab-table', '#lab-lattice'].forEach((sel) => { document.querySelector(sel).innerHTML = msg; });
     word(); member();
   }
   const names_ = (i) => names[i];
+  function sampleHist(ss) {
+    const c = {}, S = 3000;
+    for (let i = 0; i < S; i++) { for (let k = 0; k < 3; k++) ss.random(); const o = P.order(ss.random()); c[o] = (c[o] || 0) + 1; }
+    const ords = Object.keys(c).map(Number).sort((a, b) => a - b), top = Math.max(...ords.map((o) => c[o]));
+    const bars = ords.map((o) => `<div title="order ${o}: ${(100 * c[o] / S).toFixed(1)}%" style="height:${Math.max(3, (c[o] / top) * 80)}px"><b>${ords.length <= 24 || c[o] / S >= 0.03 ? Math.round(100 * c[o] / S) || '' : ''}</b><span>${ords.length <= 24 || c[o] / S >= 0.03 ? o : ''}</span></div>`).join('');
+    const mode = ords.reduce((a, b) => (c[b] > c[a] ? b : a));
+    return `<div class="hist dense">${bars}</div><p class="muted small" style="margin:-4px 0 0">Bars show percentages${ords.length > 24 ? '; only bars of 3% or more are labelled, so hover the others' : ''}. The most common order is <b>${mode}</b>, and the largest order seen is <b>${ords[ords.length - 1]}</b>.</p>`;
+  }
   function factorBig(N) {
     const SUPS = '⁰¹²³⁴⁵⁶⁷⁸⁹', f = []; let m = N;
     for (let p = 2n; p * p <= m && p < 100000n; p++) { let e = 0; while (m % p === 0n) { m /= p; e++; } if (e) f.push(p + (e > 1 ? String(e).split('').map((d) => SUPS[+d]).join('') : '')); }

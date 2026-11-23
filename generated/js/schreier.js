@@ -67,7 +67,7 @@
     let order = 1n;
     levels.forEach((L) => { order *= BigInt(L.T.size); });
     const contains = (g) => P.isIdentity(sift(P.pad(g, n)).g);
-    return { order, base: levels.map((L) => L.b), orbitSizes: levels.map((L) => L.T.size), n, confidence: K, contains };
+    return { order, base: levels.map((L) => L.b), orbitSizes: levels.map((L) => L.T.size), n, confidence: K, contains, random: step };
   }
 
   const api = { schreierSims };
