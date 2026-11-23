@@ -158,11 +158,30 @@
         }
       }
       if (N === 8 && orderCount[2] === 1) names.push('Q₈ (the quaternion group)');
-      if (N === 24 && centre === 1 && !names.length && orderCount[4] === 6 && orderCount[3] === 8) names.push('≅ S₄ (it has the same structure as S₄)');
+      if (!names.length) {
+        // Same element-order profile as S_m or A_m (m ≤ 6)? For these small orders that pins the group down.
+        for (let m = 3; m <= 6 && !names.length; m++) {
+          [[fact(m), 'S'], [fact(m) / 2, 'A']].forEach(([size, kind]) => {
+            if (names.length || size !== N || (kind === 'A' && m < 4)) return;
+            const ref = profile(m, kind === 'A');
+            if (Object.keys(ref).length === Object.keys(orderCount).length && Object.keys(ref).every((o) => ref[o] === orderCount[o]))
+              names.push('≅ ' + kind + sub(m) + ' (same element orders as ' + kind + sub(m) + ', acting on ' + k + ' points)');
+          });
+        }
+      }
     }
     return { N, n, k, ords, orderCount, abelian, centre, even, names, elements: els, bfs: G, gens: gs };
   }
 
+  const profiles = {};
+  function profile(m, alt) {
+    const id = m + (alt ? 'A' : 'S');
+    if (profiles[id]) return profiles[id];
+    const gens = alt ? [fromCycles([[0, 1, 2]], m), fromCycles([Array.from({ length: m - (m % 2 ? 0 : 1) }, (_, i) => i + (m % 2 ? 0 : 1))], m)] : [fromCycles([[0, 1]], m), fromCycles([Array.from({ length: m }, (_, i) => i)], m)];
+    const c = {};
+    generate(gens).nodes.forEach((x) => { const o = order(x); c[o] = (c[o] || 0) + 1; });
+    return (profiles[id] = c);
+  }
   const api = { identity, key, compose, inverse, isIdentity, equal, act, cycles, order, sign, gcd, lcm, toCycles, parseCycles, fromCycles, pad, bfs, wordTo, generate, analyse, sub, fact };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Perm = api;

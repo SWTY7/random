@@ -36,7 +36,17 @@
 
   <h2>Further reading</h2>
   <p>M. A. Armstrong, <i>Groups and Symmetry</i>. Nathan Carter, <i>Visual Group Theory</i>. David Joyner, <i>Adventures in Group Theory</i> (Rubik's cube and friends).</p>
-  <p class="muted small" style="margin-top:30px"><a href="#" onclick="if(confirm('Erase all progress?')){localStorage.removeItem('generated.v1');location.hash='#/';location.reload();}return false;">Reset progress</a></p>
+  <p class="muted small" style="margin-top:30px"><button id="wipe">Reset progress</button> <span id="wipe-msg"></span></p>
   </div>`;
-  window.Notes = { show(root) { root.innerHTML = html; } };
+  window.Notes = {
+    show(root) {
+      root.innerHTML = html;
+      const b = root.querySelector('#wipe'); let armed = false;
+      b.onclick = () => {
+        if (!armed) { armed = true; b.textContent = 'Click again to erase all stars'; return; }
+        try { localStorage.removeItem('generated.v1'); } catch (e) {}
+        location.hash = '#/'; location.reload();
+      };
+    },
+  };
 })();

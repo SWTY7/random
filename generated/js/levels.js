@@ -258,6 +258,48 @@
 <p><b>Burnside's lemma</b> extends this idea. The number of distinct colourings equals the average number of colourings fixed by a group element. With 2 colours on a cube's faces it gives <span class="m">(64 + 3·16 + 6·8 + 6·8 + 8·4) / 24 = 240 / 24 = 10</span>. The terms count the colourings fixed by the identity, the face half-turns, the face quarter-turns, the edge half-turns and the corner turns, so there are 10 different two-coloured cubes.</p>`,
   });
 
+  /* ---------------- Chapter V: Commutators ---------------- */
+  const ringGens = [
+    { key: 'a', name: 'left ring', cycles: [twoSq.cyc[0]] },
+    { key: 'b', name: 'right ring', cycles: [twoSq.cyc[1]] },
+  ];
+  L.push({
+    id: '5-1', chapter: 4, title: 'Commutator',
+    pos: twoSq.pts, tokens: [0, 1, 2, 3, 4, 5, 6],
+    gens: ringGens,
+    target: 'abaaabbb',
+    intro: `<p>The linked rings again, but now every token is different. The target moves only <b>three</b> tokens and leaves the other four alone. Each turn moves four tokens at once, so you need a trick.</p>
+<p>The graph has 5040 dots, far too many to draw, so you are on your own. Try this: do <i>a</i>, then <i>b</i>, then undo the <i>a</i> (that is <i>aaa</i>), then undo the <i>b</i> (<i>bbb</i>).</p>`,
+    insight: `<p>You just applied the <b>commutator</b> <span class="m">[a, b] = a b a⁻¹ b⁻¹</span>. If <span class="m">a</span> and <span class="m">b</span> moved disjoint sets of tokens it would be <span class="m">e</span>. They share only one spot, so almost everything cancels, and what is left is a <b>3-cycle</b>.</p>
+<p>This is how every Rubik's cube method works. When two moves overlap only a little, their commutator changes only a few pieces.</p>`,
+  });
+  L.push({
+    id: '5-2', chapter: 4, title: 'Conjugate',
+    pos: twoSq.pts, tokens: [0, 1, 2, 3, 4, 5, 6],
+    gens: ringGens,
+    target: 'b' + 'abaaabbb' + 'bbb',
+    intro: `<p>Again cycle three tokens and leave the rest alone, but this time a <b>different</b> three.</p>
+<p>Idea: first move the three tokens into the spots the commutator affects, then apply the commutator, then undo that first setup move.</p>`,
+    insight: `<p>That's <b>conjugation</b>: <span class="m">g · x · g⁻¹</span> does "the same thing as <span class="m">x</span>", but to the tokens that <span class="m">g</span> brought into position. Conjugate permutations always have the same <b>cycle type</b>, so a 3-cycle conjugates to another 3-cycle.</p>
+<p>Use a commutator to make a small change and a conjugate to aim it. With those two ideas you can solve almost any permutation puzzle one 3-cycle at a time, because 3-cycles generate <span class="m">Aₙ</span> and one odd move takes care of parity.</p>`,
+  });
+  // A 2×3 grid. Each move turns one 2×2 square; the squares overlap in the middle column.
+  const grid = [[-0.62, -0.31], [0, -0.31], [0.62, -0.31], [-0.62, 0.31], [0, 0.31], [0.62, 0.31]];
+  L.push({
+    id: '5-3', chapter: 4, title: 'Exotic',
+    pos: grid, tokens: [0, 1, 2, 3, 4, 5],
+    gens: [
+      { key: 'a', name: 'left square', cycles: [[0, 1, 4, 3]] },
+      { key: 'b', name: 'right square', cycles: [[1, 2, 5, 4]] },
+    ],
+    target: [1, 0, 2, 3, 4, 5], impossible: true,
+    intro: `<p>Last puzzle. Two overlapping squares on a 2×3 grid: swap the top-left pair.</p>
+<p>Careful: both moves are 4-cycles, which are odd, and a swap is odd too. So parity doesn't rule it out.</p>`,
+    proof: `<p>Look at the graph: <b>120</b> dots, not <span class="m">6! = 720</span>. The moves generate a group of order 120 inside <span class="m">S₆</span>. Its 25 elements of order 2 are 15 double swaps and 10 triple swaps. None is a single swap, so no invariant as simple as parity is needed. The target just isn't in the group.</p>
+<p>The group is a celebrity. It is <span class="m">PGL(2, 5)</span>, the Möbius maps <span class="m">x ↦ (ax + b)/(cx + d)</span> over the field with 5 elements, acting on the 6 points <span class="m">{0, 1, 2, 3, 4, ∞}</span>. These maps preserve <b>cross-ratios</b>, and a single swap does not. That is the real invariant.</p>
+<p>As an abstract group it is isomorphic to <span class="m">S₅</span>, acting on six things instead of five. This happens only for <span class="m">n = 6</span>, and it is why <span class="m">S₆</span> is the only symmetric group with an <b>outer automorphism</b>. Try it in the Lab: <span class="m">a = (1 2 5 4), b = (2 3 6 5)</span>.</p>`,
+  });
+
   // Linked rings target: reds left, blues right, gold at the far right of the right ring.
   (function () {
     const lv = L.find((l) => l.id === '3-6');
@@ -279,6 +321,7 @@
     { title: 'II · Mirrors', blurb: 'Dihedral groups, non-commutativity, orbits.' },
     { title: 'III · Shuffles', blurb: 'Symmetric and alternating groups, parity.' },
     { title: 'IV · Rigid motions', blurb: 'The rotation group of the cube.' },
+    { title: 'V · Commutators', blurb: 'Commutators, conjugates, and an exotic group.' },
   ];
 
   const api = { LEVELS: L, CHAPTERS };

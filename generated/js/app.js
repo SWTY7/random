@@ -103,7 +103,12 @@
     const fullGroup = m.orbit.size === m.groupOrder;
     $('#lens-title').textContent = fullGroup ? 'Cayley graph' : 'Schreier graph (orbit)';
     G.hintNodes = null;
-    graph.set(m.orbit.size, m.edges, m.gens.map((g, i) => ({ color: B.GEN_COLORS[i], involution: involution[i] })), 11); refreshMarks();
+    const drawable = m.orbit.size <= 200;
+    $('#too-big').style.display = drawable ? 'none' : 'flex';
+    $('#too-big').innerHTML = drawable ? '' : `<div><b>${m.orbit.size.toLocaleString()} states</b><br>That is too many to draw: a dot for every arrangement would fill this panel ${Math.round(m.orbit.size / 120)} times over.<br><span class="muted">You navigate by algebra here, not by map.</span></div>`;
+    if (drawable) graph.set(m.orbit.size, m.edges, m.gens.map((g, i) => ({ color: B.GEN_COLORS[i], involution: involution[i] })), 11);
+    else graph.set(0, [], []);
+    refreshMarks();
     requestAnimationFrame(() => fit($('#graph')));
     $('#legend').innerHTML = lv.gens.map((g, i) => `<span><i style="background:${B.GEN_COLORS[i]}"></i>${g.key}</span>`).join('') +
       `<span><i class="dot" style="background:#c8553d"></i>you</span><span><i class="dot" style="background:#3b3a36"></i>visited</span>` +
