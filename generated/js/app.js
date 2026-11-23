@@ -114,6 +114,8 @@
     $('.lvl-title').textContent = lv.title;
     $('#intro').innerHTML = lv.intro;
     $('#outcome').innerHTML = '';
+    $('#claim').style.display = lv.goal === 'relation' ? 'none' : '';
+    $('.target-wrap').style.visibility = lv.goal === 'relation' ? 'hidden' : '';
     // moves
     const box = $('#moves'); box.innerHTML = '';
     lv.gens.forEach((g, i) => {
@@ -182,6 +184,11 @@
     if (!G || G.done) return;
     G.hints++;
     const m = G.m;
+    if (lv_isRel()) {
+      const w = m.relation.map((g) => G.lv.gens[g].key);
+      say(`<p class="muted">Hint: a shortest relation has length <b>${w.length}</b> and starts with <i>${w.slice(0, Math.ceil(w.length / 3)).join('')}…</i>. In the graph, look for a short loop that uses both colours.</p>`);
+      return;
+    }
     if (m.reachable) {
       const d = m.distTo[G.node];
       const gi = m.gens.findIndex((g) => m.distTo[m.orbit.index.get(P.key(P.act(G.state, g)))] === d - 1);
@@ -192,6 +199,7 @@
       say(`<p class="muted">Hint: every arrangement you can reach is a dot in the graph on the right, ${m.orbit.size} in all, and they are now highlighted. Is the target one of them? Think about what every move <i>preserves</i>.</p>`);
     }
   }
+  const lv_isRel = () => G && G.lv.goal === 'relation';
   function say(html) { $('#outcome').innerHTML = html; }
 
   function claim() {
@@ -206,6 +214,16 @@
     finish({ claimed: true, exhausted });
   }
 
+  function checkRelation() {
+    if (G.node !== 0 || !G.history.length) return;
+    const w = G.history.map((h) => h.gen);
+    if (window.Puzzle.isTrivial(w, G.m.genOrders)) {
+      say(`<p class="muted">Back at the start, but <i>${fmtWord(w.map((g) => G.lv.gens[g].key))}</i> is lazy: it collapses because each move undoes itself after ${[...new Set(G.m.genOrders)].join(' or ')} presses. Reset and try a word that mixes the moves.</p>`);
+      return;
+    }
+    finish({});
+  }
+
   function finish(info) {
     G.done = true;
     const lv = G.lv, m = G.m;
@@ -214,6 +232,11 @@
       const s2 = G.hints === 0, s3 = !info.exhausted;
       stars = 1 + (s2 ? 1 : 0) + (s3 ? 1 : 0);
       list = [['Correct: unreachable', true], ['No hints', s2], ['Proof, not exhaustion (did not visit every state)', s3]];
+    } else if (lv.goal === 'relation') {
+      const moves = G.history.length;
+      const s2 = moves === m.par, s3 = G.hints === 0 && G.falseClaims === 0;
+      stars = 1 + (s2 ? 1 : 0) + (s3 ? 1 : 0);
+      list = [['Found a relation: ' + fmtWord(G.history.map((h) => lv.gens[h.gen].key)) + ' = e', true], [`Shortest possible (${moves} / ${m.par})`, s2], ['No hints', s3]];
     } else {
       const moves = G.history.length;
       const s2 = moves === m.par, s3 = G.hints === 0 && G.falseClaims === 0;
@@ -241,7 +264,7 @@
       <h4>${lv.impossible ? 'Why' : 'What just happened'}</h4>${lv.impossible ? lv.proof : lv.insight}
       <div class="next">${next ? `<button onclick="location.hash='#/level/${next.id}'">Next: ${next.id} ${next.title} →</button>` : `<button onclick="location.hash='#/lab'">All levels done. Open the Lab →</button>`}
       <button id="to-lab">Open this group in the Lab</button>
-      ${m.orbit.size > 2 ? '<button id="random">Random target</button>' : ''}
+      ${m.orbit.size > 2 && !lv.goal ? '<button id="random">Random target</button>' : ''}
       <button onclick="location.hash='#/'">All puzzles</button></div></div>`);
     if ($('#random')) $('#random').onclick = () => playCustom(lv, { title: lv.title + ' · random target', from: '#/level/' + lv.id, base: lv });
     $('#to-lab').onclick = () => {
@@ -258,7 +281,7 @@
       });
       if (m.reachable) marks[m.orbit.index.get(P.key(m.target))].ring = '#e0a526';
       graph.marks = marks;
-      $('#legend').insertAdjacentHTML('beforeend', m.reachable ? '<span>dots coloured by distance to the target (gold = 0)</span>' : '');
+      $('#legend').insertAdjacentHTML('beforeend', lv.goal === 'relation' ? '<span>dots coloured by distance from the start: your relation is a loop</span>' : m.reachable ? '<span>dots coloured by distance to the target (gold = 0)</span>' : '');
     }
     $('#board').classList.remove('won'); void $('#board').offsetWidth; $('#board').classList.add('won');
     window.Sound.win();
@@ -278,7 +301,7 @@
       ['States visited', visited + ' / ' + m.orbit.size],
       ['Distance travelled from start', m.orbit.dist[G.node]],
       ['Where you are (shortest word)', '<i class="m">' + (fmtWord(P.wordTo(m.orbit, G.node).map((g) => lv.gens[g].key)) || 'e') + '</i>' + (G.history.length > m.orbit.dist[G.node] ? ' <span class="muted small">(' + G.history.length + ' presses, same state)</span>' : '')],
-      ['Fewest moves to the target', reveal ? (m.reachable ? m.par : '∞ (unreachable)') : '?'],
+      [lv.goal === 'relation' ? 'Shortest relation' : 'Fewest moves to the target', reveal ? (lv.goal === 'relation' ? m.par + ': ' + fmtWord(m.relation.map((g) => lv.gens[g].key)) + ' = e' : m.reachable ? m.par : '∞ (unreachable)') : '?'],
     ];
     $('#stats').innerHTML = rows.map(([a, b]) => `<tr${b === '?' ? ' class="hidden-row"' : ''}><td>${a}</td><td>${b}</td></tr>`).join('');
     $('#counter').textContent = G.history.length + (G.history.length === 1 ? ' move' : ' moves');
@@ -333,8 +356,9 @@
         anim = { gen: G.anim.gen, from: G.anim.from, t };
         if (t >= 1) {
           G.anim = null; anim = null;
-          if (!G.done && P.key(G.state) === P.key(G.m.target)) finish({});
-          else if (G.queue.length) press(G.queue.shift());
+          if (!G.done && G.lv.goal === 'relation') { if (!G.queue.length) checkRelation(); }
+          else if (!G.done && P.key(G.state) === P.key(G.m.target)) finish({});
+          if (!G.done && G.queue.length) press(G.queue.shift());
         }
       }
       B.drawBoard($('#board'), G.m, G.paths, { state: G.state, anim, hoverGen: G.hoverGen, target: G.m.target });

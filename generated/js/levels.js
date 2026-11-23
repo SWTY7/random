@@ -310,6 +310,46 @@
 <p>As an abstract group it is isomorphic to <span class="m">S₅</span>, acting on six things instead of five. This happens only for <span class="m">n = 6</span>, and it is why <span class="m">S₆</span> is the only symmetric group with an <b>outer automorphism</b>. Try it in the Lab: <span class="m">a = (1 2 5 4), b = (2 3 6 5)</span>.</p>`,
   });
 
+  /* ---------------- Chapter VI: Relations ---------------- */
+  const twoRings4 = rings([[-0.45, 0, 0.34, 4, -Math.PI / 2], [0.45, 0, 0.34, 4, -Math.PI / 2]]);
+  L.push({
+    id: '6-1', chapter: 5, title: 'Commuting',
+    pos: row(4), tokens: [0, 1, 2, 3], goal: 'relation',
+    gens: [
+      { key: 'a', name: 'swap left pair', cycles: [[0, 1]] },
+      { key: 'b', name: 'swap right pair', cycles: [[2, 3]] },
+    ],
+    target: '',
+    intro: `<p>New goal: <b>find a relation</b>. Make a word that brings the board back to the start, but not a lazy one: <i>aa</i> just undoes itself and doesn't count. The word has to use both moves in a way that doesn't simply cancel out.</p>`,
+    insight: `<p><span class="m">abab = e</span>. Since <span class="m">a = a⁻¹</span> and <span class="m">b = b⁻¹</span>, this says <span class="m">ab = ba</span>: the moves <b>commute</b>, because they touch disjoint tokens. In the graph, this relation is the square loop.</p>
+<p>The group has the <b>presentation</b> <span class="m">⟨a, b | a² = b² = (ab)² = e⟩ ≅ C₂ × C₂</span>. Every loop in a Cayley graph is a relation, and a short list of relations is enough to generate all the others.</p>`,
+  });
+  L.push({
+    id: '6-2', chapter: 5, title: 'Braid',
+    pos: row(3), tokens: [0, 1, 2], goal: 'relation',
+    gens: [
+      { key: 'a', name: 'swap 1–2', cycles: [[0, 1]] },
+      { key: 'b', name: 'swap 2–3', cycles: [[1, 2]] },
+    ],
+    target: '',
+    intro: `<p>Now the two swaps overlap, so <span class="m">abab</span> no longer works. Find a relation anyway.</p>`,
+    insight: `<p><span class="m">(ab)³ = e</span>. Equivalently <span class="m">aba = bab</span>: both sides reverse the row. This is the <b>braid relation</b>. Together with <span class="m">a² = b² = e</span> it gives a presentation of <span class="m">S₃</span>:</p>
+<p class="m" style="font-style:normal">S₃ ≅ ⟨a, b | a² = b² = (ab)³ = e⟩.</p>
+<p>The <b>Coxeter presentation</b> of every <span class="m">Sₙ</span> follows this pattern: <span class="m">(sᵢsⱼ)²</span> for swaps far apart and <span class="m">(sᵢsᵢ₊₁)³</span> for neighbours. These are exactly the square and hexagonal faces of the permutohedron in puzzle 3-1.</p>`,
+  });
+  L.push({
+    id: '6-3', chapter: 5, title: 'Brougham Bridge',
+    pos: twoRings4.pts, tokens: [0, 1, 2, 3, 4, 5, 6, 7], goal: 'relation',
+    gens: [
+      { key: 'i', name: 'turn both squares', cycles: [[0, 1, 2, 3], [4, 5, 6, 7]] },
+      { key: 'j', name: 'swap across', cycles: [[0, 4, 2, 6], [1, 7, 3, 5]] },
+    ],
+    target: '',
+    intro: `<p>Two strange moves on eight tokens. Each has order 4, so <i>iiii</i> and <i>jjjj</i> are lazy. Find a relation that mixes them.</p>`,
+    insight: `<p>This is the <b>quaternion group</b> <span class="m">Q₈ = {±1, ±i, ±j, ±k}</span>, acting on itself. Here <span class="m">i² = j²</span>: both are <span class="m">−1</span>, the only element of order 2. Hamilton carved <span class="m">i² = j² = k² = ijk = −1</span> into Brougham Bridge in Dublin in 1843.</p>
+<p><span class="m">Q₈</span> is non-abelian (<span class="m">ij = k = −ji</span>), yet <b>every</b> subgroup of it is normal. It is the smallest group with that property, and it shows that "all subgroups normal" doesn't imply abelian. Check the subgroup lattice in the Lab.</p>`,
+  });
+
   // Linked rings target: reds left, blues right, gold at the far right of the right ring.
   (function () {
     const lv = L.find((l) => l.id === '3-6');
@@ -332,6 +372,7 @@
     { title: 'III · Shuffles', blurb: 'Symmetric and alternating groups, parity.' },
     { title: 'IV · Rigid motions', blurb: 'The rotation group of the cube.' },
     { title: 'V · Commutators', blurb: 'Commutators, conjugates, and an exotic group.' },
+    { title: 'VI · Relations', blurb: 'Loops in the Cayley graph are equations in the group.' },
   ];
 
   const api = { LEVELS: L, CHAPTERS };

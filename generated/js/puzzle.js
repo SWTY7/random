@@ -33,15 +33,42 @@
     const reachable = distTo[0] !== Infinity;
     const group = P.generate(gens, 50000);
     const genOrders = gens.map(P.order);
+    const relation = lv.goal === 'relation' ? shortestRelation(gens, genOrders) : null;
     return {
+      relation,
       lv, n, gens, genOrders, start, target, orbit, edges, distTo, reachable,
-      par: reachable ? distTo[0] : null,
+      par: relation ? relation.length : reachable ? distTo[0] : null,
       groupOrder: group.overflow ? null : group.size,
       stabiliser: group.overflow ? null : group.size / orbit.size,
     };
   }
 
-  const api = { prepare };
+  /* A word is "lazy" if it collapses to nothing by cancelling runs g^k with k a multiple of g's order. */
+  function isTrivial(word, orders) {
+    const st = [];
+    for (const g of word) {
+      const top = st[st.length - 1];
+      if (top && top[0] === g) { top[1]++; if (top[1] % orders[g] === 0) st.pop(); }
+      else st.push([g, 1]);
+    }
+    return st.length === 0;
+  }
+  /* Shortest word that returns to the start without being lazy (iterative deepening). */
+  function shortestRelation(gens, orders, maxLen) {
+    const n = gens[0].length, P_ = P;
+    for (let L = 1; L <= (maxLen || 12); L++) {
+      const w = [];
+      const found = (function dfs(p) {
+        if (w.length === L) return P_.isIdentity(p) && !isTrivial(w, orders) ? w.slice() : null;
+        for (let g = 0; g < gens.length; g++) { w.push(g); const r = dfs(P_.compose(p, gens[g])); w.pop(); if (r) return r; }
+        return null;
+      })(P_.identity(n));
+      if (found) return found;
+    }
+    return null;
+  }
+
+  const api = { prepare, isTrivial, shortestRelation };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Puzzle = api;
 })(typeof window !== 'undefined' ? window : this);

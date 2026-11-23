@@ -17,8 +17,9 @@ generate turns beside the board, and a marker shows where you are in it.
 | III · Shuffles | Sₙ, inversions and the permutohedron, generating Sₙ with two moves, parity and Aₙ, A₅ |
 | IV · Rigid motions | the rotation group of the cube (≅ S₄), handedness and det, Burnside's lemma, a quotient S₄/V₄ ≅ S₃ |
 | V · Commutators | [a, b] makes a 3-cycle, conjugation aims it, and an exotic group: PGL(2, 5) ≅ S₅ acting on 6 points |
+| VI · Relations | find a loop in the Cayley graph: ab = ba, the braid relation aba = bab, and Hamilton's i² = j² in Q₈ |
 
-There are 22 puzzles, and 7 of them are impossible on purpose. Once you've solved a level, *Random target* gives you endless variations on it. Each solved puzzle unlocks a short write-up of what just happened, and
+There are 25 puzzles. 7 of them are impossible on purpose, and 3 ask for a relation instead of a target. Once you've solved a level, *Random target* gives you endless variations on it. Each solved puzzle unlocks a short write-up of what just happened, and
 each impossible one unlocks a proof.
 
 **Stars.** A reachable target gives: ★ solve · ★ fewest moves (exact, by breadth-first search) · ★ no hints or false claims.
