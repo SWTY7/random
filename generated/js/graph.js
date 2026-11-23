@@ -18,7 +18,7 @@
       F.forEach((f) => { f[0] = f[1] = f[2] = 0; });
       for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
         const dx = P[i][0] - P[j][0], dy = P[i][1] - P[j][1], dz = P[i][2] - P[j][2];
-        const d2 = dx * dx + dy * dy + dz * dz + 1e-6, f = (L * L) / d2 * 0.12;
+        const d2 = dx * dx + dy * dy + dz * dz + 1e-6, f = (L * L) / d2 * 0.3;
         F[i][0] += dx * f; F[i][1] += dy * f; F[i][2] += dz * f;
         F[j][0] -= dx * f; F[j][1] -= dy * f; F[j][2] -= dz * f;
       }

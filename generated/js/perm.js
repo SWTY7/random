@@ -158,6 +158,10 @@
         }
       }
       if (N === 8 && orderCount[2] === 1) names.push('Q₈ (the quaternion group)');
+      if (N === 20 && orderCount[5] === 4 && orderCount[4] === 10 && orderCount[2] === 5)
+        names.push('F₂₀ = AGL(1, 5) (the Frobenius group: maps x ↦ ax + b mod 5)');
+      if (N === 168 && centre === 1 && orderCount[7] === 48 && orderCount[3] === 56 && orderCount[2] === 21 && orderCount[4] === 42)
+        names.push('GL(3, 2) ≅ PSL(2, 7) (the 168 symmetries of the Fano plane; simple)');
       if (!names.length) {
         // Same element-order profile as S_m or A_m (m ≤ 6)? For these small orders that pins the group down.
         for (let m = 3; m <= 6 && !names.length; m++) {

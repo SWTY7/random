@@ -7,10 +7,12 @@
 
   function tokenColor(lv, t) {
     if (lv.style === 'clock') return 'hsl(' + Math.round((t / 12) * 330) + ',45%,' + (t === 0 ? 38 : 52) + '%)';
+    if (lv.style === 'numbers') return 'hsl(' + Math.round((t / lv.tokens.length) * 330) + ',45%,48%)';
     return TOKEN_COLORS[t % TOKEN_COLORS.length];
   }
   function tokenLabel(lv, t, distinct) {
     if (lv.style === 'clock') return String(t === 0 ? 12 : t);
+    if (lv.style === 'numbers') return String(t + 1);
     if (!distinct) return '';
     return LETTERS[t];
   }

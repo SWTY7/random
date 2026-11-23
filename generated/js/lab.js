@@ -16,7 +16,9 @@
     ['S₅ by a swap and a 5-cycle', 't = (1 2)\nc = (1 2 3 4 5)'],
     ['Linked rings (S₇, too big to draw)', 'a = (1 2 3 4)\nb = (4 5 6 7)'],
     ['C₃ × C₃', 'a = (1 2 3)\nb = (4 5 6)'],
-    ['Dicyclic-ish: a 4-cycle and a twist', 'a = (1 2 3 4)\nb = (1 3)(5 6)'],
+    ['The exotic S₅ inside S₆ (puzzle 5-3)', 'a = (1 2 5 4)\nb = (2 3 6 5)'],
+    ['GL(3,2): symmetries of the Fano plane', 'a = (1 2 3 4 5 6 7)\nb = (1 2)(3 6)'],
+    ['Frobenius group of order 20', 'a = (1 2 3 4 5)\nb = (2 3 5 4)'],
   ];
   const COLORS = B.GEN_COLORS.concat(['#c27c0e', '#1b998b', '#8d6a9f']);
   let view = null, built = false, A = null, names = [];
@@ -83,7 +85,7 @@
         <p class="muted small" style="margin:0">Type permutations in cycle notation, one per line. Points are numbered from 1. The rightmost cycle acts first.</p>
         <label>Preset</label><select id="lab-preset"><option value="">Choose an example…</option>${PRESETS.map((p, i) => `<option value="${i}">${p[0]}</option>`).join('')}</select>
         <label>Generators</label><textarea id="lab-gens" spellcheck="false"></textarea>
-        <div class="row"><button id="lab-go">Generate ⟨…⟩</button></div>
+        <div class="row"><button id="lab-go">Generate ⟨…⟩</button><button id="lab-play">Play it as a puzzle</button></div>
         <div class="err" id="lab-err"></div>
         <label>Evaluate a word</label>
         <input type="text" id="lab-word" placeholder="e.g. abAB   (A = a⁻¹,  (ab)^3 allowed)">
@@ -97,11 +99,17 @@
         <div class="lens-wrap"><canvas id="lab-graph"></canvas><div id="lab-tip" class="tip"></div></div>
         <div class="legend" id="lab-legend"></div>
       </div>
+    </div>
+    <div class="lab-more">
+      <div class="card"><h3>Conjugacy classes</h3><div id="lab-classes"></div></div>
+      <div class="card"><h3>Counting colourings (Burnside / Pólya)</h3><div id="lab-polya"></div></div>
+      <div class="card wide"><h3>Cayley table</h3><div id="lab-table"></div></div>
     </div>`;
     const ta = root.querySelector('#lab-gens');
     ta.value = PRESETS[2][1];
     root.querySelector('#lab-preset').onchange = (e) => { if (e.target.value !== '') { ta.value = PRESETS[+e.target.value][1]; run(); } };
     root.querySelector('#lab-go').onclick = run;
+    root.querySelector('#lab-play').onclick = playIt;
     ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) run(); });
     root.querySelector('#lab-word').addEventListener('input', word);
     root.querySelector('#lab-mem').addEventListener('input', member);
@@ -147,7 +155,94 @@
       view.visited = new Set(); view.marks = { 0: { ring: '#e0a526' } };
       document.querySelector('#lab-legend').innerHTML = names.map((n, i) => `<span><i style="background:${COLORS[i % COLORS.length]}"></i>${n}</span>`).join('') + '<span><i class="dot" style="border:2.5px solid #e0a526;width:12px;height:12px"></i>identity e</span>';
     } else { view.N = 0; document.querySelector('#lab-legend').innerHTML = ''; }
+    classes(); polya(); table();
     word(); member();
+  }
+
+  /* ---- conjugacy classes and the class equation ---- */
+  const cycleType = (p) => P.cycles(p, true).map((c) => c.length).sort((x, y) => y - x);
+  function classes() {
+    const box = document.querySelector('#lab-classes');
+    if (A.N > 5000) { box.innerHTML = '<p class="muted">Too large to split into classes here.</p>'; return; }
+    const seen = new Map(), cls = [];
+    const inv = A.elements.map(P.inverse);
+    A.elements.forEach((x) => {
+      if (seen.has(P.key(x))) return;
+      const c = new Map();
+      A.elements.forEach((g, gi) => { const y = P.compose(P.compose(inv[gi], x), g); c.set(P.key(y), y); });
+      c.forEach((_, k) => seen.set(k, cls.length));
+      cls.push({ rep: x, size: c.size, order: P.order(x), type: cycleType(x) });
+    });
+    cls.sort((a, b) => a.order - b.order || a.size - b.size);
+    const typeStr = (t) => { const f = t.filter((l) => l > 1); return f.length ? f.join('+') + (t.length > f.length ? ' (+' + (t.length - f.length) + ' fixed)' : '') : 'identity'; };
+    box.innerHTML = `<p class="m" style="font-style:normal;margin:0 0 8px">|G| = ${cls.map((c) => c.size).join(' + ')} = ${A.N}</p>
+      <p class="muted small" style="margin:0 0 8px">The <b>class equation</b>: G splits into ${cls.length} conjugacy classes. Every class size divides |G|, and the classes of size 1 make up the centre.</p>
+      <table class="stats"><tr><td>size</td><td>order · cycle type · example</td></tr>${cls.map((c) => `<tr><td>${c.size}</td><td>${c.order} · ${typeStr(c.type)} · <span class="m" style="font-style:normal">${P.toCycles(c.rep)}</span></td></tr>`).join('')}</table>`;
+  }
+
+  /* ---- Burnside / Pólya: colourings of the n points up to the group ---- */
+  function polya() {
+    const box = document.querySelector('#lab-polya');
+    const n = A.n, mono = new Map();
+    A.elements.forEach((g) => {
+      const counts = {}; cycleType(g).forEach((l) => { counts[l] = (counts[l] || 0) + 1; });
+      const k = Object.keys(counts).map(Number).sort((a, b) => a - b).map((l) => l + ':' + counts[l]).join(',');
+      mono.set(k, (mono.get(k) || 0) + 1);
+    });
+    const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', sup = (x) => (x === 1 ? '' : String(x).split('').map((d) => SUP[+d]).join(''));
+    const terms = [...mono.entries()].map(([k, c]) => (c > 1 ? c : '') + k.split(',').map((t) => { const [l, e] = t.split(':').map(Number); return 'x' + P.sub(l) + sup(e); }).join(''));
+    const cyclesOf = [...mono.entries()].map(([k, c]) => [c, k.split(',').reduce((s, t) => s + Number(t.split(':')[1]), 0)]);
+    box.innerHTML = `<p class="muted small" style="margin:0 0 6px">Paint the ${n} points with k colours. Two colourings count as the same if some element of G turns one into the other. By Burnside's lemma, the number of distinct colourings is the average number of colourings fixed by an element, and an element with c cycles fixes kᶜ colourings.</p>
+      <p class="m" style="font-style:normal;overflow-wrap:anywhere">Z(G) = (1/${A.N}) · ( ${terms.join(' + ')} )</p>
+      <p style="margin:10px 0 4px">k = <input type="number" id="lab-k" min="1" max="12" value="2" style="width:60px;font:inherit;padding:2px 6px;border:1px solid #cfc5b0;border-radius:6px;background:#fffdf8"> colours →
+        <b id="lab-k-out"></b></p>
+      <div class="muted small" id="lab-k-list"></div>`;
+    const update = () => {
+      const k = Math.max(1, Math.min(12, parseInt(document.querySelector('#lab-k').value, 10) || 1));
+      let total = 0; cyclesOf.forEach(([c, cyc]) => { total += c * Math.pow(k, cyc); });
+      document.querySelector('#lab-k-out').textContent = (total / A.N).toLocaleString() + ' distinct colourings';
+      const row = []; for (let q = 1; q <= 5; q++) { let t = 0; cyclesOf.forEach(([c, cyc]) => { t += c * Math.pow(q, cyc); }); row.push(q + ' → ' + (t / A.N).toLocaleString()); }
+      document.querySelector('#lab-k-list').textContent = 'k = ' + row.join(',  ');
+    };
+    document.querySelector('#lab-k').addEventListener('input', update); update();
+  }
+
+  /* ---- Cayley table (multiplication table) ---- */
+  function table() {
+    const box = document.querySelector('#lab-table');
+    if (A.N > 60) { box.innerHTML = '<p class="muted">Shown for groups of order at most 60; this one has ' + A.N + ' elements.</p>'; return; }
+    const N = A.N, idx = A.bfs.index;
+    const label = A.elements.map((x, i) => fmtWord(P.wordTo(A.bfs, i).map((g) => names[g])));
+    const col = (i) => (i === 0 ? '#fffdf8' : 'hsl(' + Math.round((i * 137.508) % 360) + ',' + (45 + (i % 3) * 10) + '%,' + (62 + (i % 4) * 5) + '%)');
+    const cell = N <= 12 ? 34 : N <= 24 ? 22 : 11;
+    let h = `<p class="muted small" style="margin:0 0 8px">Row element first, then column element. Each element has its own colour, and the identity is white. Every row and every column contains every element exactly once, so the table is a <b>Latin square</b>. ${A.abelian ? 'This table is symmetric across the diagonal because G is abelian.' : 'It is not symmetric across the diagonal, because G is not abelian.'}</p>`;
+    h += `<div class="ctable" style="grid-template-columns:${cell * 1.6}px repeat(${N}, ${cell}px)"><div></div>`;
+    for (let j = 0; j < N; j++) h += `<div class="hd" title="${label[j]}">${cell >= 22 ? label[j] : ''}</div>`;
+    for (let i = 0; i < N; i++) {
+      h += `<div class="hd row" title="${label[i]}">${cell >= 22 ? label[i] : ''}</div>`;
+      for (let j = 0; j < N; j++) {
+        const k = idx.get(P.key(P.compose(A.elements[i], A.elements[j])));
+        h += `<div style="background:${col(k)};width:${cell}px;height:${cell}px" title="${label[i]} · ${label[j]} = ${label[k]}">${cell >= 34 ? label[k] : ''}</div>`;
+      }
+    }
+    box.innerHTML = h + '</div>';
+  }
+
+  function playIt() {
+    run();
+    const err = document.querySelector('#lab-err');
+    if (!A) return;
+    if (A.N > 5040) { err.textContent = 'Puzzles are limited to groups with at most 5040 elements.'; return; }
+    if (A.N < 3) { err.textContent = 'This group is too small to make a puzzle.'; return; }
+    const n = A.n, TAU = Math.PI * 2;
+    const pos = Array.from({ length: n }, (_, i) => [0.74 * Math.cos(-Math.PI / 2 + (TAU * i) / n), 0.74 * Math.sin(-Math.PI / 2 + (TAU * i) / n)]);
+    const lv = {
+      id: 'lab', title: 'Lab puzzle', pos, tokens: Array.from({ length: n }, (_, i) => i), style: 'numbers',
+      gens: A.gens.map((g, i) => ({ key: names[i], name: P.toCycles(g), cycles: P.cycles(g) })),
+    };
+    lv.base = lv;
+    window.Generated.playCustom(lv, { title: 'Lab puzzle: ⟨' + names.join(', ') + '⟩', from: '#/lab', base: lv,
+      intro: '<p>Your Lab group, as a puzzle: positions 1 to ' + n + ' around a circle, one button per generator. The target is a random arrangement you can reach.</p>' });
   }
   function firstNoncommuting(p) {
     for (let i = 0; i < p.gens.length; i++) for (let j = i + 1; j < p.gens.length; j++) {
@@ -194,7 +289,11 @@
   }
 
   window.Lab = {
-    show(root) { if (!built) { build(root); built = true; } else if (A && A.N <= 240) { const c = document.querySelector('#lab-graph'); const d = window.devicePixelRatio || 1; c.width = c.clientWidth * d; c.height = c.clientHeight * d; } },
+    show(root) {
+      if (!built) { build(root); built = true; }
+      if (this.pending) { const t = this.pending; this.pending = null; document.querySelector('#lab-gens').value = t; document.querySelector('#lab-preset').value = ''; run(); return; }
+      if (A && A.N <= 240) { const c = document.querySelector('#lab-graph'), d = window.devicePixelRatio || 1; c.width = c.clientWidth * d; c.height = c.clientHeight * d; }
+    },
     frame(now) { if (view && view.N) view.draw(now); },
     load(text) { document.querySelector('#lab-gens').value = text; run(); },
   };

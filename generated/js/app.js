@@ -75,8 +75,27 @@
   let G = null; // current game
   const graph = new window.GraphView($('#graph'), { onHover: onGraphHover });
 
+  /* Custom puzzles: random targets for solved levels, and groups sent over from the Lab. */
+  let custom = null, customN = 0;
+  function randomTarget(base) {
+    const m = window.Puzzle.prepare(Object.assign({}, base, { target: base.tokens.slice() }));
+    // pick a state from the farther half of the orbit, so it is never trivial
+    const far = Math.max(...m.orbit.dist);
+    const pool = m.orbit.nodes.filter((_, i) => m.orbit.dist[i] >= Math.max(1, Math.ceil(far / 2)));
+    return pool[Math.floor(Math.random() * pool.length)].slice();
+  }
+  function playCustom(base, extra) {
+    custom = Object.assign({}, base, {
+      id: 'custom-' + (++customN), custom: true, impossible: false, target: randomTarget(base),
+      intro: '<p>A random reachable target. Can you find the shortest route?</p>',
+      insight: '',
+    }, extra || {});
+    if (location.hash === '#/play') route(); else location.hash = '#/play';
+  }
+  window.Generated = { playCustom };
+
   function startLevel(id) {
-    const lv = LEVELS.find((l) => l.id === id);
+    const lv = id === 'custom' ? custom : LEVELS.find((l) => l.id === id);
     if (!lv) { location.hash = '#/'; return; }
     const m = modelOf(lv);
     G = {
@@ -84,7 +103,7 @@
       state: m.start.slice(), node: 0, history: [], presses: 0, hints: 0, falseClaims: 0,
       anim: null, queue: [], done: false, hoverGen: null, hintGen: null,
     };
-    $('.lvl-id').textContent = lv.id;
+    $('.lvl-id').textContent = lv.custom ? '∗' : lv.id;
     $('.lvl-title').textContent = lv.title;
     $('#intro').innerHTML = lv.intro;
     $('#outcome').innerHTML = '';
@@ -193,6 +212,16 @@
       stars = 1 + (s2 ? 1 : 0) + (s3 ? 1 : 0);
       list = [['Reached the target', true], [`Fewest moves (${moves} / ${m.par})`, s2], ['No hints or false claims', s3]];
     }
+    if (lv.custom) {
+      const moves = G.history.length;
+      say(`<div class="outcome"><div class="big">Solved in ${moves} move${moves === 1 ? '' : 's'}. ${moves === m.par ? '<span class="stars3">★</span> That is optimal.' : '(Fewest possible: ' + m.par + '.)'}</div>
+        <p class="muted small">|G| = ${m.groupOrder}, and the orbit of the start has ${m.orbit.size} states.</p>
+        <div class="next"><button id="again">Another random target →</button> ${lv.from ? `<button onclick="location.hash='${lv.from}'">Back</button>` : ''}</div></div>`);
+      $('#again').onclick = () => playCustom(lv.base, { title: lv.title, from: lv.from, base: lv.base, intro: lv.intro });
+      $('#board').classList.remove('won'); void $('#board').offsetWidth; $('#board').classList.add('won');
+      updateStats();
+      return;
+    }
     const prev = progress[lv.id] || {};
     progress[lv.id] = { solved: true, stars: Math.max(prev.stars || 0, stars) };
     save();
@@ -202,7 +231,26 @@
       <div class="starlist">${list.map(([t, ok]) => (ok ? '✓ ' : '· ') + t).join(' &nbsp; ')}</div>
       <h4>${lv.impossible ? 'Why' : 'What just happened'}</h4>${lv.impossible ? lv.proof : lv.insight}
       <div class="next">${next ? `<button onclick="location.hash='#/level/${next.id}'">Next: ${next.id} ${next.title} →</button>` : `<button onclick="location.hash='#/lab'">All levels done. Open the Lab →</button>`}
+      <button id="to-lab">Open this group in the Lab</button>
+      ${m.orbit.size > 2 ? '<button id="random">Random target</button>' : ''}
       <button onclick="location.hash='#/'">All puzzles</button></div></div>`);
+    if ($('#random')) $('#random').onclick = () => playCustom(lv, { title: lv.title + ' · random target', from: '#/level/' + lv.id, base: lv });
+    $('#to-lab').onclick = () => {
+      const text = lv.gens.map((g) => (/^[a-z]$/.test(g.key) ? g.key : 'abcdefgh'[lv.gens.indexOf(g)]) + ' = ' + P.toCycles(P.fromCycles(g.cycles, lv.pos.length))).join('\n');
+      window.Lab.pending = text; location.hash = '#/lab';
+    };
+    // colour the graph by distance to the target: the breadth-first layers
+    if (m.orbit.size <= 200) {
+      const far = Math.max(...m.distTo.filter((d) => d !== Infinity), 1);
+      const marks = {};
+      m.orbit.nodes.forEach((_, i) => {
+        const d = m.distTo[i];
+        if (d !== Infinity) marks[i] = { fill: 'hsl(' + Math.round(40 + (d / far) * 180) + ',55%,' + (45 + (d / far) * 25) + '%)' };
+      });
+      if (m.reachable) marks[m.orbit.index.get(P.key(m.target))].ring = '#e0a526';
+      graph.marks = marks;
+      $('#legend').insertAdjacentHTML('beforeend', m.reachable ? '<span>dots coloured by distance to the target (gold = 0)</span>' : '');
+    }
     $('#board').classList.remove('won'); void $('#board').offsetWidth; $('#board').classList.add('won');
     updateStats();
   }
@@ -287,14 +335,14 @@
   function route() {
     const h = location.hash.replace(/^#\/?/, '');
     let view = 'home';
-    if (h.startsWith('level/')) view = 'play';
+    if (h.startsWith('level/') || h === 'play') view = 'play';
     else if (h === 'lab') view = 'lab';
     else if (h === 'about') view = 'about';
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === view));
     document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('on', a.dataset.nav === (view === 'play' ? 'home' : view)));
     current = view;
     if (view === 'home') renderHome();
-    if (view === 'play') startLevel(h.slice(6));
+    if (view === 'play') startLevel(h === 'play' ? 'custom' : h.slice(6));
     if (view === 'lab') window.Lab.show($('#lab'));
     if (view === 'about') window.Notes.show($('#about'));
     window.scrollTo(0, 0);
