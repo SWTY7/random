@@ -98,6 +98,7 @@
         <div id="lab-out"></div>
         <div class="lens-wrap"><canvas id="lab-graph"></canvas><div id="lab-tip" class="tip"></div></div>
         <div class="legend" id="lab-legend"></div>
+        <div class="colour-by" id="lab-colour">Colour the graph by: <button data-c="none">nothing</button><button data-c="order">element order</button><button data-c="class">conjugacy class</button> <span class="muted small">(or click a subgroup in the lattice below to see its cosets)</span></div>
       </div>
     </div>
     <div class="lab-more">
@@ -116,6 +117,7 @@
     root.querySelector('#lab-word').addEventListener('input', word);
     root.querySelector('#lab-mem').addEventListener('input', member);
     view = new window.GraphView(root.querySelector('#lab-graph'), { onHover: hover });
+    root.querySelectorAll('#lab-colour button').forEach((b) => b.onclick = () => colourBy(b.dataset.c));
     run();
   }
 
@@ -174,13 +176,26 @@
       const c = new Map();
       A.elements.forEach((g, gi) => { const y = P.compose(P.compose(inv[gi], x), g); c.set(P.key(y), y); });
       c.forEach((_, k) => seen.set(k, cls.length));
-      cls.push({ rep: x, size: c.size, order: P.order(x), type: cycleType(x) });
+      cls.push({ rep: x, size: c.size, order: P.order(x), type: cycleType(x), keys: [...c.keys()] });
     });
     cls.sort((a, b) => a.order - b.order || a.size - b.size);
+    A.classOf = new Map(); cls.forEach((c, ci) => c.keys.forEach((k) => A.classOf.set(k, ci)));
     const typeStr = (t) => { const f = t.filter((l) => l > 1); return f.length ? f.join('+') + (t.length > f.length ? ' (+' + (t.length - f.length) + ' fixed)' : '') : 'identity'; };
     box.innerHTML = `<p class="m" style="font-style:normal;margin:0 0 8px">|G| = ${cls.map((c) => c.size).join(' + ')} = ${A.N}</p>
       <p class="muted small" style="margin:0 0 8px">The <b>class equation</b>: G splits into ${cls.length} conjugacy classes. Every class size divides |G|, and the classes of size 1 make up the centre.</p>
+      ${normalCandidates(cls)}
       <table class="stats"><tr><td>size</td><td>order · cycle type · example</td></tr>${cls.map((c) => `<tr><td>${c.size}</td><td>${c.order} · ${typeStr(c.type)} · <span class="m" style="font-style:normal">${P.toCycles(c.rep)}</span></td></tr>`).join('')}</table>`;
+  }
+
+  /* A normal subgroup is a union of whole classes, contains {e}, and has order dividing |G|. */
+  function normalCandidates(cls) {
+    const rest = cls.slice(1).map((c) => c.size);
+    if (rest.length > 18) return '';
+    const sums = new Set();
+    for (let m = 0; m < 1 << rest.length; m++) { let t = 1; rest.forEach((z, i) => { if (m & (1 << i)) t += z; }); if (A.N % t === 0) sums.add(t); }
+    const list = [...sums].sort((a, b) => a - b);
+    const simple = list.length === 2 && !A.abelian;
+    return `<p class="small" style="margin:0 0 8px">A normal subgroup is a union of whole classes that includes <span class="m">{e}</span>, and its size divides |G|. Sums of class sizes that pass this test: <b>${list.join(', ')}</b>.${simple ? ' Only 1 and |G|, so <b>this group is simple</b>: it has no normal subgroups besides the trivial ones.' : ''}</p>`;
   }
 
   /* ---- Burnside / Pólya: colourings of the n points up to the group ---- */
@@ -282,6 +297,17 @@
       `<br><span class="muted">The Cayley graph above now shows the ${cs.count} cosets in ${cs.count} colours, all of the same size ${S.order}. This is Lagrange's theorem.</span>`;
   }
 
+  function colourBy(mode) {
+    if (!A || A.N > 240) return;
+    const hue = (k) => 'hsl(' + Math.round((k * 137.508) % 360) + ',55%,' + (52 + (k % 3) * 8) + '%)';
+    const marks = { 0: { ring: '#e0a526' } };
+    if (mode !== 'none') A.elements.forEach((x, i) => {
+      const k = mode === 'order' ? A.ords[i] : A.classOf.get(P.key(x));
+      marks[i] = Object.assign({ fill: mode === 'order' ? hue(k * 3) : hue(k) }, i === 0 ? { ring: '#e0a526' } : {});
+    });
+    view.marks = marks;
+    document.querySelectorAll('#lab-colour button').forEach((b) => b.classList.toggle('on', b.dataset.c === mode));
+  }
   function playIt() {
     run();
     const err = document.querySelector('#lab-err');

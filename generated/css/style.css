@@ -134,3 +134,6 @@ main { max-width: 1320px; margin: 0 auto; padding: 22px 28px 60px; }
 .reason { text-align: left; font-family: var(--serif); font-size: 15.5px; line-height: 1.4; padding: 10px 14px; background: #fffdf8; }
 .reason:hover { background: #f4eedf; border-color: #b9ad94; }
 .reason.wrong { text-decoration: line-through; opacity: .55; }
+.colour-by { font-family: var(--sans); font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.colour-by button { padding: 3px 9px; font-size: 12px; }
+.colour-by button.on { background: var(--ink); color: #fbf8f1; border-color: var(--ink); }

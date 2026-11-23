@@ -32,7 +32,7 @@ An unreachable target gives: ★ say so · ★ pick the right *reason* from thre
 - a histogram of element orders, and the Lagrange divisors that actually occur as orders
 - a drawn Cayley graph (up to 240 elements)
 - the **subgroup lattice** as a Hasse diagram (up to order 120), with normal subgroups marked. Click a subgroup to colour the Cayley graph by its cosets.
-- **conjugacy classes** and the class equation, with cycle types
+- **conjugacy classes** and the class equation, with cycle types, plus the class sizes that could add up to a normal subgroup (enough to *prove* A₅ and PSL(2,7) simple). You can also colour the Cayley graph by class or by element order.
 - the **cycle index** and Burnside/Pólya counts of k-colourings up to symmetry
 - the **Cayley table** as a coloured Latin square (up to order 60)
 - **Play it as a puzzle**, which turns any group you type into a playable board
