@@ -40,7 +40,8 @@ An unreachable target gives: ★ say so · ★ no hints · ★ *proof, not exhau
 ## Controls
 
 `1`–`4` or the move's letter apply a move · `Z` undo · `0` reset · `H` hint.
-Drag the graph to turn it, double-click it to pause, and hover a dot to preview that arrangement and its word.
+Drag the graph to turn it and double-click it to pause. Hover a dot to preview that arrangement and its word, and **click a neighbouring dot to walk there**.
+Every generator has its own note, so a word plays as a short melody. 🔊 mutes it.
 
 ## Files
 

@@ -33,7 +33,7 @@
   <p>Unreachable targets: ★ say so, ★ no hints, ★ <i>proof, not exhaustion</i>: claim it before you have visited every reachable state.</p>
 
   <h2>Controls</h2>
-  <p><span class="kbd">1</span>–<span class="kbd">4</span> or the move's letter applies a move · <span class="kbd">Z</span> undo · <span class="kbd">0</span> reset · <span class="kbd">H</span> hint. Drag the graph to turn it, double-click it to pause the spin, and hover a dot to preview that arrangement.</p>
+  <p><span class="kbd">1</span>–<span class="kbd">4</span> or the move's letter applies a move · <span class="kbd">Z</span> undo · <span class="kbd">0</span> reset · <span class="kbd">H</span> hint. Drag the graph to turn it and double-click it to pause the spin. Hover a dot to preview that arrangement, and <b>click a neighbouring dot</b> to walk along that edge. 🔊 in the header toggles sound.</p>
 
   <h2>Further reading</h2>
   <p>M. A. Armstrong, <i>Groups and Symmetry</i>. Nathan Carter, <i>Visual Group Theory</i>. David Joyner, <i>Adventures in Group Theory</i> (Rubik's cube and friends).</p>

@@ -73,7 +73,13 @@
 
   /* ---------- play ---------- */
   let G = null; // current game
-  const graph = new window.GraphView($('#graph'), { onHover: onGraphHover });
+  const graph = new window.GraphView($('#graph'), { onHover: onGraphHover, onClick: onGraphClick });
+  /* click a neighbouring dot to walk along that edge */
+  function onGraphClick(j) {
+    if (!G || G.anim) return;
+    const gi = G.m.gens.findIndex((g) => G.m.orbit.index.get(P.key(P.act(G.state, g))) === j);
+    if (gi >= 0) press(gi);
+  }
 
   /* Custom puzzles: random targets for solved levels, and groups sent over from the Lab. */
   let custom = null, customN = 0;
@@ -150,6 +156,7 @@
   function press(gi) {
     if (!G) return;
     if (G.anim) { G.queue.push(gi); return; }
+    window.Sound.move(gi);
     const from = G.state, to = P.act(from, G.m.gens[gi]);
     G.history.push({ state: from, node: G.node, gen: gi });
     G.state = to; G.presses++;
@@ -161,7 +168,7 @@
   }
   function undo() {
     if (!G || !G.history.length || G.anim) return;
-    const h = G.history.pop();
+    const h = G.history.pop(); window.Sound.undo();
     G.state = h.state; G.node = h.node; graph.moveTo(G.node);
     updateStats(); updateWord();
   }
@@ -190,7 +197,7 @@
     if (!G || G.done) return;
     const m = G.m;
     if (m.reachable) {
-      G.falseClaims++;
+      G.falseClaims++; window.Sound.nope();
       say(`<div class="outcome bad"><div class="big">Actually, it can be done.</div><p>The target is in the orbit: it can be reached in ${m.par} move${m.par === 1 ? '' : 's'}. Keep looking, because the graph on the right contains it (the gold ring).</p></div>`);
       return;
     }
@@ -219,6 +226,7 @@
         <div class="next"><button id="again">Another random target →</button> ${lv.from ? `<button onclick="location.hash='${lv.from}'">Back</button>` : ''}</div></div>`);
       $('#again').onclick = () => playCustom(lv.base, { title: lv.title, from: lv.from, base: lv.base, intro: lv.intro });
       $('#board').classList.remove('won'); void $('#board').offsetWidth; $('#board').classList.add('won');
+      window.Sound.win();
       updateStats();
       return;
     }
@@ -252,6 +260,7 @@
       $('#legend').insertAdjacentHTML('beforeend', m.reachable ? '<span>dots coloured by distance to the target (gold = 0)</span>' : '');
     }
     $('#board').classList.remove('won'); void $('#board').offsetWidth; $('#board').classList.add('won');
+    window.Sound.win();
     updateStats();
   }
 
@@ -267,6 +276,7 @@
       ['All arrangements of these tokens', multinomial(m.start)],
       ['States visited', visited + ' / ' + m.orbit.size],
       ['Distance travelled from start', m.orbit.dist[G.node]],
+      ['Where you are (shortest word)', '<i class="m">' + (fmtWord(P.wordTo(m.orbit, G.node).map((g) => lv.gens[g].key)) || 'e') + '</i>' + (G.history.length > m.orbit.dist[G.node] ? ' <span class="muted small">(' + G.history.length + ' presses, same state)</span>' : '')],
       ['Fewest moves to the target', reveal ? (m.reachable ? m.par : '∞ (unreachable)') : '?'],
     ];
     $('#stats').innerHTML = rows.map(([a, b]) => `<tr${b === '?' ? ' class="hidden-row"' : ''}><td>${a}</td><td>${b}</td></tr>`).join('');
@@ -277,6 +287,11 @@
     const c = {}; tokens.forEach((t) => { c[t] = (c[t] || 0) + 1; });
     let r = P.fact(tokens.length); Object.values(c).forEach((k) => { r /= P.fact(k); });
     return r;
+  }
+  function fmtWord(keys) {
+    const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹', parts = [];
+    keys.forEach((k) => { const l = parts[parts.length - 1]; if (l && l[0] === k) l[1]++; else parts.push([k, 1]); });
+    return parts.map(([k, n]) => k + (n > 1 ? String(n).split('').map((d) => SUP[+d]).join('') : '')).join(' ');
   }
   function updateWord() {
     const keys = G.history.map((h) => G.lv.gens[h.gen].key);
@@ -348,6 +363,9 @@
     window.scrollTo(0, 0);
   }
 
+  const muteBtn = $('#mute');
+  const paintMute = () => { muteBtn.textContent = window.Sound.muted ? '🔇' : '🔊'; muteBtn.title = window.Sound.muted ? 'Sound off' : 'Sound on'; };
+  muteBtn.onclick = () => { window.Sound.toggle(); paintMute(); }; paintMute();
   $('#undo').onclick = undo; $('#reset').onclick = reset; $('#hint').onclick = hint; $('#claim').onclick = claim;
   document.addEventListener('keydown', (e) => {
     if (current !== 'play' || !G || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
