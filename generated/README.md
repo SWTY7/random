@@ -36,6 +36,7 @@ An unreachable target gives: ★ say so · ★ pick the right *reason* from thre
 - the **cycle index** and Burnside/Pólya counts of k-colourings up to symmetry
 - the **Cayley table** as a coloured Latin square (up to order 60)
 - **Play it as a puzzle**, which turns any group you type into a playable board
+- **Schreier–Sims** for groups too big to list. Presets include the **Rubik's Cube group** (43,252,003,274,489,856,000 = 2²⁷·3¹⁴·5³·7²·11, computed in milliseconds) and the Mathieu groups M₁₁ and M₁₂, with a stabiliser-chain breakdown and membership testing by sifting. On the cube, try the word `ur`: it has order 105.
 - a word evaluator: `abAB` or `(ab)^3`, where capitals are inverses
 - a membership test that also gives the **shortest word** for an element
 
@@ -49,6 +50,7 @@ Every generator has its own note, so a word plays as a short melody. 🔊 mutes 
 
 - `js/perm.js`: permutations, BFS over orbits and groups, and group identification. It runs in the browser and in Node.
 - `js/levels.js`: the puzzles and their texts. `js/puzzle.js` turns a level into a solved model: orbit, distances to the target, and par.
+- `js/schreier.js`: randomised Schreier–Sims (product-replacement random elements sifted through a stabiliser chain, using BigInt orders).
 - `js/lattice.js`: finds every subgroup by closing cyclic subgroups under joins, plus normality and cosets.
 - `js/graph.js`: a small 3D force-directed graph viewer. `js/board.js` draws the board. `js/app.js` is the UI. `js/lab.js` is the Lab.
 - `tools/check.js`: `node tools/check.js` checks that every "impossible" level is really impossible and every other level is reachable, and prints |G|, orbit, stabiliser and par.

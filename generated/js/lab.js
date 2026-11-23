@@ -18,6 +18,10 @@
     ['C₃ × C₃', 'a = (1 2 3)\nb = (4 5 6)'],
     ['The exotic S₅ inside S₆ (puzzle 5-3)', 'a = (1 2 5 4)\nb = (2 3 6 5)'],
     ['GL(3,2): symmetries of the Fano plane', 'a = (1 2 3 4 5 6 7)\nb = (1 2)(3 6)'],
+    ['Mathieu M₁₁ (sporadic simple, 7920)', 'a = (1 2 3 4 5 6 7 8 9 10 11)\nb = (3 7 11 8)(4 10 5 6)'],
+    ['Mathieu M₁₂ (95 040, via Schreier–Sims)', 'a = (1 2 3 4 5 6 7 8 9 10 11)\nb = (3 7 11 8)(4 10 5 6)\nc = (1 12)(2 11)(3 6)(4 8)(5 9)(7 10)'],
+    ["Rubik's Cube (48 stickers)", 'u = (1 3 8 6)(2 5 7 4)(9 33 25 17)(10 34 26 18)(11 35 27 19)\nl = (9 11 16 14)(10 13 15 12)(1 17 41 40)(4 20 44 37)(6 22 46 35)\nf = (17 19 24 22)(18 21 23 20)(6 25 43 16)(7 28 42 13)(8 30 41 11)\nr = (25 27 32 30)(26 29 31 28)(3 38 43 19)(5 36 45 21)(8 33 48 24)\nb = (33 35 40 38)(34 37 39 36)(3 9 46 32)(2 12 47 29)(1 14 48 27)\nd = (41 43 48 46)(42 45 47 44)(14 22 30 38)(15 23 31 39)(16 24 32 40)'],
+    ['S₁₂ by a swap and a 12-cycle', 't = (1 2)\nc = (1 2 3 4 5 6 7 8 9 10 11 12)'],
     ['Frobenius group of order 20', 'a = (1 2 3 4 5)\nb = (2 3 5 4)'],
   ];
   const COLORS = B.GEN_COLORS.concat(['#c27c0e', '#1b998b', '#8d6a9f']);
@@ -67,6 +71,7 @@
   }
 
   function wordFor(p) {
+    if (A.big) return null;
     const k = A.bfs.index.get(P.key(p));
     if (k === undefined) return null;
     return P.wordTo(A.bfs, k).map((g) => names[g]);
@@ -130,7 +135,7 @@
     try { localStorage.setItem('generated.lab', document.querySelector('#lab-gens').value); } catch (e) {}
     const t0 = performance.now();
     const a = P.analyse(parsed.gens);
-    if (a.overflow) { err.textContent = 'This group has more than 60 000 elements, which is too many to list here.'; return; }
+    if (a.overflow) { runBig(parsed); return; }
     A = a;
     const ms = Math.round(performance.now() - t0);
     const ords = Object.keys(a.orderCount).map(Number).sort((x, y) => x - y);
@@ -168,7 +173,7 @@
   const cycleType = (p) => P.cycles(p, true).map((c) => c.length).sort((x, y) => y - x);
   function classes() {
     const box = document.querySelector('#lab-classes');
-    if (A.N > 5000) { box.innerHTML = '<p class="muted">Too large to split into classes here.</p>'; return; }
+    if (A.N > 5000) { box.innerHTML = '<p class="muted">Too large to split into classes here.</p>'; A.classOf = new Map(); return; }
     const seen = new Map(), cls = [];
     const inv = A.elements.map(P.inverse);
     A.elements.forEach((x) => {
@@ -324,6 +329,43 @@
     window.Generated.playCustom(lv, { title: 'Lab puzzle: ⟨' + names.join(', ') + '⟩', from: '#/lab', base: lv,
       intro: '<p>Your Lab group, as a puzzle: positions 1 to ' + n + ' around a circle, one button per generator. The target is a random arrangement you can reach.</p>' });
   }
+  /* Too big to list: Schreier–Sims gives the order and a membership test. */
+  function runBig(parsed) {
+    const t0 = performance.now();
+    const ss = window.Schreier.schreierSims(parsed.gens);
+    const ms = Math.round(performance.now() - t0);
+    const N = ss.order, n = parsed.n;
+    const moved = new Set(); parsed.gens.forEach((g) => g.forEach((x, i) => { if (x !== i) moved.add(i); }));
+    const k = moved.size, allEven = parsed.gens.every((g) => P.sign(g) === 1);
+    let fk = 1n; for (let i = 2n; i <= BigInt(k); i++) fk *= i;
+    const names = [];
+    if (N === fk) names.push('S' + P.sub(k) + ' (all permutations of the ' + k + ' moved points)');
+    if (N * 2n === fk && allEven) names.push('A' + P.sub(k) + ' (all even permutations of the ' + k + ' moved points)');
+    if (N === 95040n && k === 12) names.push('M₁₂, the Mathieu group (a sporadic simple group)');
+    if (N === 43252003274489856000n && n === 48) names.push("the Rubik's Cube group");
+    A = { big: true, N, n, gens: parsed.gens, ss, abelian: false };
+    document.querySelector('#lab-out').innerHTML = `<div class="gname">${names.length ? names.join('<br>≅ ') : 'A group of order ' + N.toLocaleString()}</div>
+      <table class="stats">
+        <tr><td>Order |G|</td><td><b>${N.toLocaleString()}</b>${N > 1n ? ' = ' + factorBig(N) : ''}</td></tr>
+        <tr><td>Acts on</td><td>${k} of ${n} points</td></tr>
+        <tr><td>Stabiliser chain</td><td>|G| = ${ss.orbitSizes.join(' · ')}<br><span class="muted small">base points ${ss.base.map((b) => b + 1).join(', ')}: each factor is the size of an orbit in the chain G ≥ G₍b₁₎ ≥ G₍b₁b₂₎ ≥ … ≥ 1</span></td></tr>
+        <tr><td>Generator orders</td><td>${parsed.gens.map((g, i) => names_(i) + ': ' + P.order(g)).join(', ')}</td></tr>
+        <tr><td>Parity</td><td>${allEven ? 'every generator is even, so G ⊆ Aₙ' : 'some generator is odd, so exactly half of G is even'}</td></tr>
+      </table>
+      <p class="muted small" style="margin:10px 0 0">Too many elements to list, so this was computed by the <b>Schreier–Sims algorithm</b> in ${ms} ms. It sifts random elements through a chain of stabilisers until ${ss.confidence} in a row pass. The chance of a wrong answer is below 2⁻${ss.confidence}. The word and membership tools on the left still work: membership is tested by sifting.</p>`;
+    document.querySelector('#lab-graph').style.display = 'none'; view.N = 0;
+    document.querySelector('#lab-legend').innerHTML = '';
+    const msg = '<p class="muted">This group is too large to list element by element, which this panel needs.</p>';
+    ['#lab-classes', '#lab-polya', '#lab-table', '#lab-lattice'].forEach((sel) => { document.querySelector(sel).innerHTML = msg; });
+    word(); member();
+  }
+  const names_ = (i) => names[i];
+  function factorBig(N) {
+    const SUPS = '⁰¹²³⁴⁵⁶⁷⁸⁹', f = []; let m = N;
+    for (let p = 2n; p * p <= m && p < 100000n; p++) { let e = 0; while (m % p === 0n) { m /= p; e++; } if (e) f.push(p + (e > 1 ? String(e).split('').map((d) => SUPS[+d]).join('') : '')); }
+    if (m > 1n) f.push(String(m));
+    return f.join(' · ');
+  }
   function firstNoncommuting(p) {
     for (let i = 0; i < p.gens.length; i++) for (let j = i + 1; j < p.gens.length; j++) {
       if (!P.equal(P.compose(p.gens[i], p.gens[j]), P.compose(p.gens[j], p.gens[i]))) return names[i] + names[j] + ' ≠ ' + names[j] + names[i];
@@ -353,6 +395,7 @@
     try {
       const p = P.pad(P.parseCycles(v), A.n);
       if (p.length > A.n) { box.innerHTML = 'No: it moves a point the group never touches.'; return; }
+      if (A.big) { box.innerHTML = A.ss.contains(p) ? 'Yes: ' + P.toCycles(p) + ' is in G (found by sifting it through the stabiliser chain).' : 'No: ' + P.toCycles(p) + ' is not in G.'; return; }
       const w = wordFor(p);
       box.innerHTML = w ? 'Yes: ' + P.toCycles(p) + ' = <i>' + fmtWord(w) + '</i> (apply left to right)' : 'No: ' + P.toCycles(p) + ' is not in G.' + (A.even === A.N && P.sign(p) === -1 ? ' (It is odd, and every element of G is even.)' : '');
     } catch (e) { box.innerHTML = '<span class="err">' + e.message + '</span>'; }
