@@ -309,7 +309,7 @@
     gens: ringGens,
     target: 'abaaabbb',
     intro: `<p>The linked rings again, but now every token is different. The target moves only <b>three</b> tokens and leaves the other four alone. Each turn moves four tokens at once, so you need a trick.</p>
-<p>The graph has 5040 dots, far too many to draw, so you are on your own. Try this: do <i>a</i>, then <i>b</i>, then undo the <i>a</i> (that is <i>aaa</i>), then undo the <i>b</i> (<i>bbb</i>).</p>`,
+<p>The full graph has 5040 dots, so the panel shows only your neighbourhood: every state within a few moves of you. Try this: do <i>a</i>, then <i>b</i>, then undo the <i>a</i> (that is <i>aaa</i>), then undo the <i>b</i> (<i>bbb</i>).</p>`,
     insight: `<p>You just applied the <b>commutator</b> <span class="m">[a, b] = a b a⁻¹ b⁻¹</span>. If <span class="m">a</span> and <span class="m">b</span> moved disjoint sets of tokens it would be <span class="m">e</span>. They share only one spot, so almost everything cancels, and what is left is a <b>3-cycle</b>.</p>
 <p>This is how every Rubik's cube method works. When two moves overlap only a little, their commutator changes only a few pieces.</p>`,
   });

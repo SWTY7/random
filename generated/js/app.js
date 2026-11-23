@@ -78,7 +78,8 @@
   /* click a neighbouring dot to walk along that edge */
   function onGraphClick(j) {
     if (!G || G.anim) return;
-    const gi = G.m.gens.findIndex((g) => G.m.orbit.index.get(P.key(P.act(G.state, g))) === j);
+    const want = P.key(G.local ? G.localNodes[j] : G.m.orbit.nodes[j]);
+    const gi = G.m.gens.findIndex((g) => P.key(P.act(G.state, g)) === want);
     if (gi >= 0) press(gi);
   }
 
@@ -129,24 +130,64 @@
     // lens
     const involution = m.genOrders.map((o) => o === 2);
     const fullGroup = m.orbit.size === m.groupOrder;
-    $('#lens-title').textContent = fullGroup ? 'Cayley graph' : 'Schreier graph (orbit)';
+    $('#lens-title').textContent = (fullGroup ? 'Cayley graph' : 'Schreier graph (orbit)') + (m.orbit.size > 200 ? ', local view' : '');
     G.hintNodes = null;
     const drawable = m.orbit.size <= 200;
-    $('#too-big').style.display = drawable ? 'none' : 'flex';
-    $('#too-big').innerHTML = drawable ? '' : `<div><b>${m.orbit.size.toLocaleString()} states</b><br>That is too many to draw: a dot for every arrangement would fill this panel ${Math.round(m.orbit.size / 120)} times over.<br><span class="muted">You navigate by algebra here, not by map.</span></div>`;
+    G.local = !drawable; G.visitedKeys = new Set([P.key(m.start)]); G.localPos = new Map();
+    $('#too-big').style.display = 'none';
     if (drawable) graph.set(m.orbit.size, m.edges, m.gens.map((g, i) => ({ color: B.GEN_COLORS[i], involution: involution[i] })), 11);
-    else graph.set(0, [], []);
+    else { graph.spin = true; buildLocal(); }
     refreshMarks();
     requestAnimationFrame(() => fit($('#graph')));
     $('#legend').innerHTML = lv.gens.map((g, i) => `<span><i style="background:${B.GEN_COLORS[i]}"></i>${g.key}</span>`).join('') +
       `<span><i class="dot" style="background:#c8553d"></i>you</span><span><i class="dot" style="background:#3b3a36"></i>visited</span>` +
       (m.reachable ? `<span><i class="dot" style="border:2.5px solid #e0a526;width:12px;height:12px"></i>target</span>` : '');
+    if (G.local) $('#legend').insertAdjacentHTML('beforeend', `<span class="local-note">${localNote()}</span>`);
     fit($('#board')); fit($('#target'));
     B.drawBoard($('#target'), m, G.paths, { state: m.target, small: true });
     updateStats(); updateWord();
   }
 
+  /* For orbits too large to draw: everything within a few moves of the current state. */
+  function buildLocal() {
+    const m = G.m, gens = m.gens, inv = gens.map(P.inverse);
+    let R = 1, nodes, keys, parent;
+    for (;;) {
+      nodes = [G.state]; keys = new Map([[P.key(G.state), 0]]); parent = [-1];
+      const dist = [0];
+      for (let h = 0; h < nodes.length; h++) {
+        if (dist[h] >= R) continue;
+        gens.concat(inv).forEach((g) => {
+          const y = P.act(nodes[h], g), k = P.key(y);
+          if (!keys.has(k)) { keys.set(k, nodes.length); nodes.push(y); parent.push(h); dist.push(dist[h] + 1); }
+        });
+      }
+      if (nodes.length > 70 || R >= 4) break;
+      R++;
+    }
+    const edges = [];
+    nodes.forEach((x, i) => gens.forEach((g, gi) => { const j = keys.get(P.key(P.act(x, g))); if (j !== undefined && j !== i) edges.push([i, j, gi]); }));
+    // warm start: reuse old positions, put new nodes next to their parent
+    const init = nodes.map((x) => G.localPos.get(P.key(x)) || null);
+    nodes.forEach((x, i) => { if (!init[i]) { const q = init[parent[i]] || [0, 0, 0]; init[i] = [q[0] + Math.random() - 0.5, q[1] + Math.random() - 0.5, q[2] + Math.random() - 0.5]; } });
+    graph.set(nodes.length, edges, gens.map((g, i) => ({ color: B.GEN_COLORS[i], involution: m.genOrders[i] === 2 })), 11, init, true);
+    graph.visited = new Set(nodes.map((x, i) => (G.visitedKeys.has(P.key(x)) ? i : -1)).filter((i) => i >= 0));
+    G.localPos = new Map(nodes.map((x, i) => [P.key(x), graph.raw[i]]));
+    G.localNodes = nodes; G.localKeys = keys; G.localR = R;
+    $('#legend .local-note') ? ($('#legend .local-note').textContent = localNote()) : $('#legend').insertAdjacentHTML('beforeend', `<span class="local-note">${localNote()}</span>`);
+  }
+  const localNote = () => `showing the ${G.localNodes.length} states within ${G.localR} moves of you, out of ${G.m.orbit.size.toLocaleString()}`;
+  function afterMove() {
+    G.visitedKeys.add(P.key(G.state));
+    if (G.local) { buildLocal(); refreshMarks(); } else graph.moveTo(G.node);
+  }
+
   function refreshMarks() {
+    if (G.local) {
+      const t = G.localKeys.get(P.key(G.m.target));
+      graph.marks = t === undefined ? {} : { [t]: { ring: '#e0a526' } };
+      return;
+    }
     const m = G.m, marks = {};
     if (m.reachable) {
       const t = m.orbit.index.get(P.key(m.target));
@@ -166,18 +207,18 @@
     G.node = G.m.orbit.index.get(P.key(to));
     G.anim = { gen: gi, from, t0: performance.now() };
     G.hintGen = null; document.querySelectorAll('.mv.hint').forEach((b) => b.classList.remove('hint'));
-    graph.moveTo(G.node);
+    afterMove();
     updateStats(); updateWord();
   }
   function undo() {
     if (!G || !G.history.length || G.anim) return;
     const h = G.history.pop(); window.Sound.undo();
-    G.state = h.state; G.node = h.node; graph.moveTo(G.node);
+    G.state = h.state; G.node = h.node; afterMove();
     updateStats(); updateWord();
   }
   function reset() {
     if (!G || G.anim) return;
-    G.state = G.m.start.slice(); G.node = 0; G.history = []; graph.moveTo(0);
+    G.state = G.m.start.slice(); G.node = 0; G.history = []; afterMove();
     updateStats(); updateWord();
   }
   function hint() {
@@ -301,7 +342,7 @@
 
   function updateStats() {
     const m = G.m, lv = G.lv, solved = progress[lv.id] && progress[lv.id].solved;
-    const visited = graph.visited.size;
+    const visited = G.visitedKeys.size;
     G.visitedAll = visited >= m.orbit.size;
     const reveal = G.done || solved;
     const rows = [
@@ -344,7 +385,8 @@
   function onGraphHover(i, e) {
     const tip = $('#tip');
     if (!G || i < 0) { tip.style.display = 'none'; return; }
-    const m = G.m, s = m.orbit.nodes[i];
+    const m = G.m, s = G.local ? G.localNodes[i] : m.orbit.nodes[i];
+    i = G.local ? m.orbit.index.get(P.key(s)) : i;
     const d = m.orbit.dist[i], dt = m.distTo[i];
     tip.innerHTML = '';
     tip.appendChild(tipC); tipC.style.width = '72px'; tipC.style.height = '72px';

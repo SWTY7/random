@@ -5,14 +5,14 @@
   'use strict';
   function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
-  function layout3d(N, edges, seed) {
+  function layout3d(N, edges, seed, init, centerOn0) {
     const rand = rng(seed || 7);
-    const P = Array.from({ length: N }, () => [rand() - 0.5, rand() - 0.5, rand() - 0.5]);
+    const P = Array.from({ length: N }, (_, i) => (init && init[i] ? init[i].slice() : [rand() - 0.5, rand() - 0.5, rand() - 0.5]));
     const adj = new Set(); const E = [];
     edges.forEach(([a, b]) => { const k = a < b ? a + ',' + b : b + ',' + a; if (a !== b && !adj.has(k)) { adj.add(k); E.push([a, b]); } });
-    const iters = N > 80 ? 700 : 500;
+    const iters = init ? 220 : N > 80 ? 700 : 500;
     const L = 1;
-    let temp = 0.5;
+    let temp = init ? 0.2 : 0.5;
     const F = P.map(() => [0, 0, 0]);
     for (let it = 0; it < iters; it++) {
       F.forEach((f) => { f[0] = f[1] = f[2] = 0; });
@@ -36,6 +36,7 @@
     }
     // centre and normalise
     const c = [0, 0, 0]; P.forEach((p) => { c[0] += p[0] / N; c[1] += p[1] / N; c[2] += p[2] / N; });
+    if (centerOn0 && N) { c[0] = P[0][0]; c[1] = P[0][1]; c[2] = P[0][2]; }
     let r = 0; P.forEach((p) => { p[0] -= c[0]; p[1] -= c[1]; p[2] -= c[2]; r = Math.max(r, Math.hypot(p[0], p[1], p[2])); });
     if (N <= 3) { // tiny graphs: put them on a flat circle facing the viewer
       P.forEach((p, i) => { const a = -Math.PI / 2 + (2 * Math.PI * i) / N; p[0] = N === 1 ? 0 : Math.cos(a); p[1] = N === 1 ? 0 : Math.sin(a); p[2] = 0; });
@@ -43,6 +44,18 @@
     }
     P.forEach((p) => { p[0] /= r || 1; p[1] /= r || 1; p[2] /= r || 1; });
     return P;
+  }
+
+  function layoutRaw(N, edges, seed, init) {
+    // like layout3d, but returns positions in layout units, centred on node 0, plus a display scale
+    const P = layout3d(N, edges, seed, init, true);
+    // layout3d normalised to radius 1; undo that using the mean edge length so successive views keep one scale
+    let el = 0, ec = 0;
+    edges.forEach(([a, b]) => { el += Math.hypot(P[a][0] - P[b][0], P[a][1] - P[b][1], P[a][2] - P[b][2]); ec++; });
+    const k = ec ? 1 / (el / ec) : 1;
+    const out = P.map((p) => p.map((v) => v * k));
+    out.scale = Math.max(3.2, ...out.map((p) => Math.hypot(p[0], p[1], p[2])));
+    return out;
   }
 
   function GraphView(canvas, opts) {
@@ -66,12 +79,14 @@
     canvas.addEventListener('pointerleave', () => { self.hover = -1; if (self.opts.onHover) self.opts.onHover(-1); });
     canvas.addEventListener('dblclick', () => { self.spin = !self.spin; });
   }
-  GraphView.prototype.set = function (N, edges, info, seed) {
+  GraphView.prototype.set = function (N, edges, info, seed, init, keepView) {
     this.N = N; this.edges = edges; this.info = info;
-    this.P = layout3d(N, edges, seed);
+    this.raw = keepView ? layoutRaw(N, edges, seed, init) : null;
+    this.P = keepView ? this.raw.map((p) => p.map((v) => v / this.raw.scale)) : layout3d(N, edges, seed);
     this.flat = this.P.every((p) => Math.abs(p[2]) < 1e-9);
-    if (this.flat) { this.yaw = 0; this.pitch = 0; }
-    this.visited = new Set([0]); this.cur = 0; this.anim = null; this.hover = -1; this.spin = !this.flat;
+    if (this.flat && !keepView) { this.yaw = 0; this.pitch = 0; }
+    this.visited = new Set([0]); this.cur = 0; this.anim = null; this.hover = -1;
+    if (!keepView) this.spin = !this.flat;
     // edge list for drawing: merge i->j / j->i of an involution into one undirected segment
     const seen = new Set(); this.drawEdges = [];
     edges.forEach(([a, b, g]) => {
