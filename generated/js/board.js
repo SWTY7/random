@@ -6,11 +6,13 @@
   const LETTERS = 'ABCDEFGHIJKL';
 
   function tokenColor(lv, t) {
+    if (lv.look && lv.look[t]) return lv.look[t].color;
     if (lv.style === 'clock') return 'hsl(' + Math.round((t / 12) * 330) + ',45%,' + (t === 0 ? 38 : 52) + '%)';
     if (lv.style === 'numbers') return 'hsl(' + Math.round((t / lv.tokens.length) * 330) + ',45%,48%)';
     return TOKEN_COLORS[t % TOKEN_COLORS.length];
   }
   function tokenLabel(lv, t, distinct) {
+    if (lv.look && lv.look[t]) return lv.look[t].label;
     if (lv.style === 'clock') return String(t === 0 ? 12 : t);
     if (lv.style === 'numbers') return String(t + 1);
     if (!distinct) return '';
@@ -76,11 +78,12 @@
     ctx.save();
     ctx.shadowColor = 'rgba(40,30,20,0.25)'; ctx.shadowBlur = R * 0.35; ctx.shadowOffsetY = R * 0.12;
     ctx.fillStyle = col;
-    if (lv.style === 'faces') { const s = R * 1.5; roundRect(ctx, x - s / 2 * 1.05, y - s / 2 * 1.05, s * 1.05, s * 1.05, R * 0.18); ctx.fill(); }
+    const square = lv.look && lv.look[t] ? lv.look[t].square : lv.style === 'faces';
+    if (square) { const s = R * 1.5; roundRect(ctx, x - s / 2 * 1.05, y - s / 2 * 1.05, s * 1.05, s * 1.05, R * 0.18); ctx.fill(); }
     else { ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
-    if (lv.style !== 'faces') { ctx.beginPath(); ctx.arc(x - R * 0.3, y - R * 0.35, R * 0.45, 0, Math.PI * 2); ctx.fill(); }
+    if (!square) { ctx.beginPath(); ctx.arc(x - R * 0.3, y - R * 0.35, R * 0.45, 0, Math.PI * 2); ctx.fill(); }
     const txt = label !== undefined ? label : tokenLabel(lv, t, distinct);
     if (txt) {
       ctx.fillStyle = '#fffaf0'; ctx.font = '600 ' + Math.round(R * (txt.length > 1 ? 0.75 : 0.9)) + 'px Georgia, serif';
@@ -106,9 +109,10 @@
     // guides
     ctx.strokeStyle = '#d9d1c1'; ctx.lineWidth = opts.small ? 1 : 2;
     guideShapes(lv, pos).forEach((s) => { const c = X([s.cx, s.cy]); ctx.beginPath(); ctx.arc(c[0], c[1], s.r * S, 0, Math.PI * 2); ctx.stroke(); });
-    if (lv.style === 'faces' && !opts.small) {
+    if (lv.labels && !opts.small) {
       ctx.fillStyle = '#9b927f'; ctx.font = '13px Georgia, serif'; ctx.textAlign = 'center';
-      pos.forEach((p, i) => { const q = X(p); ctx.fillText(lv.labels[i], q[0], q[1] + R * 1.15 + 12); });
+      pos.forEach((p, i) => { const q = X(p); if (lv.labels[i]) ctx.fillText(lv.labels[i], q[0], q[1] + R * 1.15 + 12); });
+      if (lv.captions) lv.captions.forEach(([x, y, text]) => { const q = X([x, y]); ctx.fillText(text, q[0], q[1]); });
     }
     // slots
     pos.forEach((p, i) => {

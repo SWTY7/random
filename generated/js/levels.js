@@ -385,6 +385,43 @@
 <p><span class="m">Q₈</span> is non-abelian (<span class="m">ij = k = −ji</span>), yet <b>every</b> subgroup of it is normal. It is the smallest group with that property, and it shows that "all subgroups normal" doesn't imply abelian. Check the subgroup lattice in the Lab.</p>`,
   });
 
+  /* ---------------- Chapter VII: Isomorphism ---------------- */
+  // Left: the cube net (faces U L F R B D). Right: the cube's four long diagonals,
+  // d1 = UFR–DBL, d2 = UFL–DBR, d3 = UBR–DFL, d4 = UBL–DFR, placed so that y turns them like a square.
+  const twin = cube.map(([x, y]) => [x * 0.52 - 0.52, y * 0.52]).concat([[0.64, -0.25], [0.89, 0], [0.64, 0.25], [0.39, 0]]);
+  const twinLook = {};
+  ['U', 'L', 'F', 'R', 'B', 'D'].forEach((l, i) => { twinLook[i] = { color: ['#c8553d', '#2f6690', '#e0a526', '#588157', '#7b4b94', '#d17a9e'][i], label: l, square: true }; });
+  ['1', '2', '3', '4'].forEach((l, i) => { twinLook[6 + i] = { color: ['#3b3a36', '#8a6d3b', '#5c6b73', '#9b5d73'][i], label: l, square: false }; });
+  const twinGens = [
+    { key: 'y', name: 'turn', cycles: [[2, 1, 4, 3], [6, 7, 8, 9]], about: 'quarter turn about the vertical axis' },
+    { key: 'x', name: 'tip', cycles: [[2, 0, 4, 5], [6, 9, 7, 8]], about: 'quarter turn about the left–right axis' },
+  ];
+  const twinCaptions = [[-0.52, -0.55, 'faces'], [0.64, -0.55, 'long diagonals']];
+  L.push({
+    id: '7-1', chapter: 6, title: 'Two costumes',
+    pos: twin, tokens: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], look: twinLook, captions: twinCaptions, labels: ['', '', '', '', '', '', '', '', '', ''],
+    gens: twinGens,
+    target: 'yxxy',
+    intro: `<p>The cube again, and on the right its four <b>long diagonals</b>, the lines joining opposite corners. Every turn of the cube moves its faces <i>and</i> its diagonals. Reach the target.</p>
+<p>Watch the right-hand board. Is anything special about how the diagonals move?</p>`,
+    insight: `<p>Every rotation permutes the four diagonals, which gives a <b>homomorphism</b> <span class="m">φ : Rot(cube) → S₄</span>. On its own, the right-hand board is a puzzle on 4 tokens whose moves are two 4-cycles. Those generate all of <span class="m">S₄</span>, so every one of the <span class="m">4! = 24</span> orders of the diagonals can be reached.</p>
+<p>So <span class="m">φ</span> is onto, and both groups have 24 elements, so <span class="m">φ</span> is a bijection: an <b>isomorphism</b>. The rotation group of the cube <i>is</i> <span class="m">S₄</span> in a different costume. That's why the graph on the right looks exactly like the one in 4-1. You can also check it in the Lab: <span class="m">y = (1 2 4 3), x = (1 3 2 4)</span> generates <span class="m">S₄</span>.</p>`,
+  });
+  L.push({
+    id: '7-2', chapter: 6, title: 'Faithful',
+    pos: twin, tokens: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], look: twinLook, captions: twinCaptions, labels: ['', '', '', '', '', '', '', '', '', ''],
+    gens: twinGens,
+    target: [0, 1, 2, 3, 4, 5, 7, 6, 8, 9], impossible: true,
+    reasons: [
+      ['The only rotation that leaves every face in place is the identity, and the identity moves no diagonal.'],
+      ['A swap is odd, and rotations only ever move the diagonals by even permutations.', 'Not true: y moves the diagonals by a 4-cycle, which is odd. The rotations give all 24 orders of the diagonals, odd ones included.'],
+      ['Diagonal 1 can never reach the spot where diagonal 2 is.', 'It can: one press of y takes it there. What can’t happen is swapping the two while every face stays put.'],
+    ],
+    intro: `<p>Leave every face exactly where it is, but swap diagonals 1 and 2.</p>`,
+    proof: `<p>If every face is back in place, the rotation you did must be the identity, and the identity doesn't move any diagonal. In algebra terms, the <b>kernel</b> of <span class="m">φ</span> is trivial: <span class="m">φ</span> is <b>injective</b>, and the action on the diagonals is <b>faithful</b>.</p>
+<p>Compare puzzle 4-4. There the action on the three axes had kernel <span class="m">V₄</span>: four different rotations looked the same. So a homomorphism can forget information (4-4) or keep all of it (here). The first isomorphism theorem <span class="m">G / ker φ ≅ im φ</span> covers both cases.</p>`,
+  });
+
   // Linked rings target: reds left, blues right, gold at the far right of the right ring.
   (function () {
     const lv = L.find((l) => l.id === '3-6');
@@ -408,6 +445,7 @@
     { title: 'IV · Rigid motions', blurb: 'The rotation group of the cube.' },
     { title: 'V · Commutators', blurb: 'Commutators, conjugates, and an exotic group.' },
     { title: 'VI · Relations', blurb: 'Loops in the Cayley graph are equations in the group.' },
+    { title: 'VII · Isomorphism', blurb: 'One group, two costumes.' },
   ];
 
   const api = { LEVELS: L, CHAPTERS };
