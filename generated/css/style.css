@@ -118,8 +118,6 @@ main { max-width: 1320px; margin: 0 auto; padding: 22px 28px 60px; }
   .top { padding: 12px 14px; }
   .brand small { display: none; }
 }
-.too-big { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; color: var(--ink); background: repeating-radial-gradient(circle at 50% 50%, transparent 0 18px, rgba(217,205,180,.25) 18px 19px); border-radius: 10px; }
-.too-big div { background: var(--card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--rule); max-width: 340px; }
 .lab-more { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
 .lab-more h3 { margin: 0 0 8px; font-size: 18px; }
 .lab-more .wide { grid-column: span 2; overflow-x: auto; }

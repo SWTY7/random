@@ -33,6 +33,7 @@
       <p>Each level gives you a few moves. Each move is a <b>permutation</b>, and the arrangements those moves can reach form an orbit of the <b>group they generate</b>. While you play, the right-hand panel draws the whole graph of that group and shows where you are in it.</p>
       <p>Some targets can't be reached. For those the answer is <i>Can't be done</i>, and the reward is understanding why.</p>
       <p><button class="go" onclick="location.hash='#/level/${(LEVELS.find((l) => !(progress[l.id] && progress[l.id].solved)) || LEVELS[0]).id}'">${total ? 'Continue' : 'Start with puzzle 1-1'} →</button></p>
+      ${total === LEVELS.length * 3 ? '<p><b>All ' + total + ' stars.</b> You have walked every graph in the book. The Lab is open whenever you want to build your own.</p>' : ''}
       <p class="totals">${total} / ${LEVELS.length * 3} stars · ${LEVELS.filter((l) => progress[l.id] && progress[l.id].solved).length} / ${LEVELS.length} solved · <a href="#/lab">open the Lab</a> · <a href="#/about">notes and glossary</a></p>
     </div><canvas id="hero-graph"></canvas>`;
     home.appendChild(hero);
@@ -127,6 +128,7 @@
       b.onmouseleave = () => { G.hoverGen = null; };
       box.appendChild(b);
     });
+    if (lv.id === '1-1' && !Object.keys(progress).length) box.querySelector('.mv').classList.add('hint');
     // lens
     const involution = m.genOrders.map((o) => o === 2);
     const fullGroup = m.orbit.size === m.groupOrder;
@@ -134,7 +136,6 @@
     G.hintNodes = null;
     const drawable = m.orbit.size <= 200;
     G.local = !drawable; G.visitedKeys = new Set([P.key(m.start)]); G.localPos = new Map();
-    $('#too-big').style.display = 'none';
     if (drawable) graph.set(m.orbit.size, m.edges, m.gens.map((g, i) => ({ color: B.GEN_COLORS[i], involution: involution[i] })), 11);
     else { graph.spin = true; buildLocal(); }
     refreshMarks();
@@ -343,7 +344,6 @@
   function updateStats() {
     const m = G.m, lv = G.lv, solved = progress[lv.id] && progress[lv.id].solved;
     const visited = G.visitedKeys.size;
-    G.visitedAll = visited >= m.orbit.size;
     const reveal = G.done || solved;
     const rows = [
       ['Group generated, |G|', m.groupOrder + (reveal ? ' — ' + groupName(m) : '')],

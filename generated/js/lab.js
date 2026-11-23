@@ -107,7 +107,8 @@
       <div class="card wide"><h3>Cayley table</h3><div id="lab-table"></div></div>
     </div>`;
     const ta = root.querySelector('#lab-gens');
-    ta.value = PRESETS[2][1];
+    let saved = null; try { saved = localStorage.getItem('generated.lab'); } catch (e) {}
+    ta.value = saved || PRESETS[2][1];
     root.querySelector('#lab-preset').onchange = (e) => { if (e.target.value !== '') { ta.value = PRESETS[+e.target.value][1]; run(); } };
     root.querySelector('#lab-go').onclick = run;
     root.querySelector('#lab-play').onclick = playIt;
@@ -124,6 +125,7 @@
     let parsed;
     try { parsed = parse(document.querySelector('#lab-gens').value); } catch (e) { err.textContent = e.message; return; }
     names = parsed.names;
+    try { localStorage.setItem('generated.lab', document.querySelector('#lab-gens').value); } catch (e) {}
     const t0 = performance.now();
     const a = P.analyse(parsed.gens);
     if (a.overflow) { err.textContent = 'This group has more than 60 000 elements, which is too many to list here.'; return; }
