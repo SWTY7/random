@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06121a">
+<title>Primordial</title>
+<meta name="description" content="An artificial-life ecosystem. Creatures with evolving neural-network brains graze, hunt, mate and split into species.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2306121a'/%3E%3Cpath d='M12 38 Q20 30 14 22 L24 30 Z' fill='%2357c4a0'/%3E%3Cellipse cx='34' cy='32' rx='16' ry='12' fill='%2357c4a0'/%3E%3Ccircle cx='42' cy='27' r='3.4' fill='%23fff'/%3E%3Ccircle cx='43' cy='27' r='1.8' fill='%23000'/%3E%3Ccircle cx='42' cy='37' r='3.4' fill='%23fff'/%3E%3Ccircle cx='43' cy='37' r='1.8' fill='%23000'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <main id="stage">
+    <canvas id="cv"></canvas>
+
+    <div id="topbar" class="glass">
+      <button id="btn-play" class="play" title="Pause / run (Space)">❚❚</button>
+      <button id="btn-step" class="icon" title="One tick (.)">⇥</button>
+      <div class="seg" id="seg-speed" title="Ticks per frame (1–6)">
+        <button data-speed="1">1×</button><button data-speed="3" class="on">3×</button><button data-speed="8">8×</button><button data-speed="20">20×</button><button data-speed="0" title="As fast as this machine allows">Max</button>
+      </div>
+      <div id="clock"><b id="clk-year">Year 1</b><span id="clk-season"></span><span id="clk-tick" class="dim"></span></div>
+      <div id="chips">
+        <span class="chip" title="Living creatures"><i>●</i><b id="st-pop">0</b> alive</span>
+        <span class="chip" title="Living species (named so far)"><i>⑂</i><b id="st-sp">0</b> species</span>
+        <span class="chip" title="Oldest lineage, in generations"><i>↻</i><b id="st-gen">0</b> gen.</span>
+        <span class="chip dim" id="st-tps" title="Simulation speed"></span>
+      </div>
+    </div>
+
+    <div id="toolbar" class="glass">
+      <button data-tool="inspect" class="on" title="Inspect: click a creature, drag to pan (Q)">🔍</button>
+      <button data-tool="feed" title="Scatter algae (W)">🌿</button>
+      <button data-tool="fertile" title="Make the ground fertile (E)">✨</button>
+      <button data-tool="barren" title="Make the ground barren (R)">🏜️</button>
+      <button data-tool="smite" title="Smite: kill everything in the circle (X)">⚡</button>
+      <input type="range" id="brush" min="20" max="300" value="90" title="Brush size" orient="vertical">
+    </div>
+
+    <div id="viewbar" class="glass">
+      <label>Colour <select id="colorby">
+        <option value="species">by species</option><option value="diet">by diet</option><option value="gen">by generation</option>
+        <option value="energy">by energy</option><option value="age">by age</option>
+      </select></label>
+      <label class="check"><input type="checkbox" id="opt-vision" checked> vision</label>
+      <label class="check"><input type="checkbox" id="opt-trails" checked> trail</label>
+      <label class="check"><input type="checkbox" id="opt-fert" checked> ground</label>
+      <button id="btn-fit" class="small" title="Fit the whole world (0)">Fit</button>
+    </div>
+
+    <div id="tip" hidden></div>
+    <div id="toast" hidden></div>
+    <div id="welcome" class="glass" hidden>
+      <h2>Primordial</h2>
+      <p>Six founding lineages share a shallow sea. Each creature steers with a small neural network it inherited, eats what its diet allows, and buds or mates when it is well fed. Copies are imperfect, so lineages drift apart, and when a lineage drifts far enough from its founder it is named as a new species.</p>
+      <p>Five of the founders graze algae. One scavenges carcasses and may learn to hunt. What happens next is up to selection.</p>
+      <p class="dim">Click a creature to see what it sees and how it thinks. Drag to pan, scroll to zoom. The panel on the right tracks every species that has ever lived.</p>
+      <button id="btn-welcome" class="wide">Watch</button>
+    </div>
+  </main>
+
+  <aside id="panel">
+    <header>
+      <h1>Primordial</h1>
+      <p>Evolution in a shallow sea</p>
+    </header>
+    <nav id="tabs">
+      <button data-tab="life" class="on">Life</button>
+      <button data-tab="tree">Tree</button>
+      <button data-tab="trends">Trends</button>
+      <button data-tab="creature">Creature</button>
+      <button data-tab="world">World</button>
+      <button data-tab="chronicle">Chronicle</button>
+    </nav>
+
+    <section class="tab" id="tab-life">
+      <div class="headrow"><h2>Who lives here</h2>
+        <div class="seg small" id="seg-muller"><button data-m="abs" class="on">Count</button><button data-m="rel">Share</button></div>
+      </div>
+      <canvas id="cv-muller" class="chart" style="height:210px"></canvas>
+      <p class="note">Each band is a species. A new species grows out of its parent's band, so the plot shows descent as well as abundance.</p>
+      <div id="species-card" hidden></div>
+      <h2>Living species</h2>
+      <div id="species-list"></div>
+      <div class="headrow"><h2>Trait space</h2>
+        <span class="inline"><select id="ts-x" class="mini"></select><select id="ts-y" class="mini"></select></span>
+      </div>
+      <canvas id="cv-traits" class="chart" style="height:220px"></canvas>
+      <p class="note">Every dot is a living creature, placed by two of its genes. Clusters are species; gaps between them are where hybrids would do badly.</p>
+    </section>
+
+    <section class="tab" id="tab-tree" hidden>
+      <div class="headrow"><h2>Tree of life</h2>
+        <label class="mini-label">Show species that reached <select id="tree-min" class="mini"><option value="1">1</option><option value="5">5</option><option value="10" selected>10</option><option value="25">25</option><option value="60">60</option></select></label>
+      </div>
+      <canvas id="cv-tree" class="chart" style="height:560px"></canvas>
+      <p class="note">Time runs left to right. Each line is a species, from the moment it split from its parent to its extinction. Living species end in a dot, thicker when abundant.</p>
+      <div id="tree-card"></div>
+    </section>
+
+    <section class="tab" id="tab-trends" hidden>
+      <div id="trends"></div>
+      <h2>Records</h2>
+      <div id="records" class="kv"></div>
+    </section>
+
+    <section class="tab" id="tab-creature" hidden>
+      <div id="cr-empty" class="empty">
+        <p>Click a creature in the water to follow it.</p>
+        <button id="btn-random" class="small">Pick one at random</button>
+        <button id="btn-random-hunter" class="small">Pick a hunter</button>
+        <button id="btn-oldest" class="small">Pick the oldest</button>
+      </div>
+      <div id="cr-body" hidden>
+        <div class="crhead">
+          <span id="cr-swatch" class="swatch big"></span>
+          <div><div id="cr-name" class="crname"></div><div id="cr-sub" class="dim"></div><div id="cr-doing" class="doing"></div></div>
+        </div>
+        <div class="bars">
+          <div class="bar"><span>Energy</span><div><i id="cr-energy"></i></div><b id="cr-energy-v"></b></div>
+          <div class="bar"><span>Health</span><div><i id="cr-health" class="hp"></i></div><b id="cr-health-v"></b></div>
+          <div class="bar"><span>Age</span><div><i id="cr-age" class="age"></i></div><b id="cr-age-v"></b></div>
+        </div>
+        <div class="btnrow">
+          <label class="check"><input type="checkbox" id="cr-follow" checked> follow (F)</label>
+          <button id="cr-parent" class="small" title="Select its living parent">Parent</button>
+          <button id="cr-child" class="small" title="Select one of its living children">Child</button>
+          <button id="cr-jar" class="small" title="Keep a copy of this genome in the specimen jar">Save to jar</button>
+          <button id="cr-kill" class="small danger">Smite</button>
+        </div>
+        <div id="cr-stats" class="kv"></div>
+        <h2>Brain</h2>
+        <canvas id="cv-brain" class="chart" style="height:400px"></canvas>
+        <p class="note">Inputs on the left: for each of five eye sectors, how close the nearest plant, carcass and creature are, how alike the creature's colour is (kin) and how much bigger it is. Orange links excite, blue inhibit. Node colours are live.</p>
+        <h2>Genes</h2>
+        <div id="cr-genes"></div>
+        <h2>Lineage</h2>
+        <div id="cr-lineage" class="lineage"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-world" hidden>
+      <h2>New world</h2>
+      <label class="row">Seed <span class="inline"><input id="seed" spellcheck="false"><button id="btn-dice" class="icon" title="Random seed">🎲</button></span></label>
+      <label class="row">Landscape <select id="wland"></select></label>
+      <p class="blurb note" id="wland-blurb"></p>
+      <label class="row">Size <select id="wsize"><option value="s">Small pond</option><option value="m" selected>Shallow sea</option><option value="l">Wide ocean (slower)</option></select></label>
+      <button id="btn-new" class="wide">Begin again</button>
+
+      <h2>Rules of nature</h2>
+      <div id="params"></div>
+      <label class="check"><input type="checkbox" id="p-sexual" checked> Close relatives may mate (recombine their genomes)</label>
+      <div class="btnrow"><button id="btn-reset-params" class="small">Default rules</button></div>
+      <h2>Interventions</h2>
+      <div class="btnrow">
+        <button id="btn-immigrate" class="small" title="Release a new random lineage">Seed new life</button>
+        <button id="btn-plague" class="small" title="Kill half of the most common species">Plague</button>
+        <button id="btn-bloom" class="small" title="Fill the meadows with algae">Algal bloom</button>
+        <button id="btn-winter" class="small" title="Wipe out most plants">Hard winter</button>
+      </div>
+
+      <h2>Specimen jar</h2>
+      <p class="note">Genomes you saved. They are kept in this browser and can be released into any world.</p>
+      <div id="jar"></div>
+
+      <h2>Save</h2>
+      <div class="btnrow">
+        <button id="btn-save" class="small">Save world to file</button>
+        <button id="btn-load" class="small">Load world…</button>
+        <button id="btn-shot" class="small">Picture</button>
+        <input type="file" id="file" accept=".json,application/json" hidden>
+      </div>
+      <div class="btnrow"><button id="btn-about" class="small">What is this?</button></div>
+      <p class="note">Keys: Space pause · . step · 1–5 speed · Q W E R X tools · F follow · Esc let go · 0 fit view · [ ] brush size</p>
+    </section>
+
+    <section class="tab" id="tab-chronicle" hidden>
+      <h2>Chronicle</h2>
+      <div class="btnrow filters" id="ev-filter">
+        <label class="check"><input type="checkbox" data-ev="species" checked> new species</label>
+        <label class="check"><input type="checkbox" data-ev="extinct" checked> extinctions</label>
+        <label class="check"><input type="checkbox" data-ev="other" checked> other</label>
+      </div>
+      <ol id="events"></ol>
+    </section>
+  </aside>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/genome.js"></script>
+<script src="js/species.js"></script>
+<script src="js/world.js"></script>
+<script src="js/render.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
