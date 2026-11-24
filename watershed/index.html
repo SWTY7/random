@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f3eee2">
+<title>Watershed</title>
+<meta name="description" content="A hydraulic erosion sandbox. Rain falls, rivers carve valleys, deltas grow into the sea.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M4 54 L24 18 L34 34 L42 24 L60 54 Z' fill='%23786a58'/%3E%3Cpath d='M24 18 L29 27 L24 25 L20 26 Z' fill='%23fff'/%3E%3Cpath d='M30 54 C34 46 28 42 34 36' stroke='%233f7fb8' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <main id="stage">
+    <canvas id="cv"></canvas>
+    <div id="viewbar">
+      <div class="seg" id="seg-mode">
+        <button data-mode="2d" class="on" title="Map view (V)">Map</button>
+        <button data-mode="3d" title="3D view (V)">3D</button>
+      </div>
+      <div class="seg" id="seg-view">
+        <button data-view="natural" class="on" title="Natural colours">Natural</button>
+        <button data-view="relief" title="Elevation tints">Relief</button>
+        <button data-view="flow" title="Where water drains">Flow</button>
+        <button data-view="change" title="Red: worn away. Blue: laid down.">Change</button>
+      </div>
+      <button id="btn-before" class="ghost" title="Hold to see the land as it started (B)">Hold: before</button>
+    </div>
+    <div id="playbar">
+      <button id="btn-play" class="big" title="Rain on / off (Space)">❚❚ Raining</button>
+      <span id="clock"></span>
+    </div>
+    <div id="tip" hidden></div>
+    <div id="toast" hidden></div>
+    <div id="hint3d" hidden>Drag to orbit · scroll to zoom · tools work on the map</div>
+  </main>
+
+  <aside id="panel">
+    <header>
+      <h1>Watershed</h1>
+      <p>Rain falls, rivers carve, mountains wear down, and the sand ends up in the sea.</p>
+    </header>
+
+    <section>
+      <h2>Land</h2>
+      <label class="row">Terrain
+        <select id="preset"></select>
+      </label>
+      <p class="blurb" id="preset-blurb"></p>
+      <label class="row">Seed
+        <span class="inline"><input id="seed" spellcheck="false"><button id="btn-dice" class="icon" title="Random seed">🎲</button></span>
+      </label>
+      <label class="row">Detail
+        <select id="size"><option value="256">256 × 256 (fast)</option><option value="384" selected>384 × 384</option><option value="512">512 × 512 (slow)</option></select>
+      </label>
+      <button id="btn-gen" class="wide">Raise new land</button>
+    </section>
+
+    <section>
+      <h2>Weather</h2>
+      <label class="slider">Rainfall <output></output><input type="range" id="s-rain" min="0" max="100" value="46"></label>
+      <label class="row">Rain falls
+        <select id="rainmode"><option value="uniform">everywhere</option><option value="mountains">mostly on high ground</option></select>
+      </label>
+      <label class="slider">Sea level <output></output><input type="range" id="s-sea" min="-0.05" max="0.8" step="0.002"></label>
+    </section>
+
+    <section>
+      <h2>Geology</h2>
+      <label class="slider" title="How much soil fast water can pick up">Erodibility <output></output><input type="range" data-p="erosion" min="0.02" max="0.9" step="0.01"></label>
+      <label class="slider" title="How quickly slow water drops its load">Settling <output></output><input type="range" data-p="deposition" min="0.02" max="0.9" step="0.01"></label>
+      <label class="slider" title="How much a droplet can carry">Carrying capacity <output></output><input type="range" data-p="capacity" min="0.5" max="12" step="0.1"></label>
+      <label class="slider" title="Higher: droplets evaporate sooner, so streams are short">Evaporation <output></output><input type="range" data-p="evaporation" min="0.003" max="0.08" step="0.001"></label>
+      <label class="slider" title="Higher: water keeps going straight, cutting straighter channels">Momentum <output></output><input type="range" data-p="inertia" min="0" max="0.6" step="0.01"></label>
+      <label class="slider" title="Steep slopes crumble into scree">Scree <output></output><input type="range" data-p="thermal" min="0" max="1" step="0.01"></label>
+      <label class="slider" title="Tectonics slowly push the high ground back up">Uplift <output></output><input type="range" data-p="uplift" min="0" max="1" step="0.01"></label>
+      <button id="btn-defaults" class="ghost small">Default geology</button>
+    </section>
+
+    <section>
+      <h2>Hands</h2>
+      <div class="tools" id="tools">
+        <button data-tool="rain" title="1">🌧️<span>Cloud</span></button>
+        <button data-tool="spring" title="2">💧<span>Spring</span></button>
+        <button data-tool="raise" title="3">⛰️<span>Raise</span></button>
+        <button data-tool="lower" title="4">🕳️<span>Dig</span></button>
+        <button data-tool="smooth" title="5">〰️<span>Smooth</span></button>
+        <button data-tool="flatten" title="6">▭<span>Flatten</span></button>
+        <button data-tool="inspect" title="7">🔍<span>Survey</span></button>
+      </div>
+      <p class="blurb" id="tool-blurb"></p>
+      <label class="slider">Brush size <output></output><input type="range" id="s-brush" min="3" max="60" value="14"></label>
+      <label class="slider">Strength <output></output><input type="range" id="s-strength" min="0.05" max="1" step="0.01" value="0.5"></label>
+      <div class="btnrow">
+        <button id="btn-undo" class="ghost small" title="Ctrl+Z">Undo</button>
+        <button id="btn-clear-springs" class="ghost small">Remove springs</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Display</h2>
+      <label class="check"><input type="checkbox" id="c-rivers" checked> Rivers</label>
+      <label class="check"><input type="checkbox" id="c-contours"> Contour lines (100 m)</label>
+      <label class="slider">Smallest river drawn <output></output><input type="range" id="s-thr" min="0" max="100" value="55"></label>
+      <label class="slider">3D height exaggeration <output></output><input type="range" id="s-vex" min="0.4" max="2.5" step="0.05" value="1"></label>
+      <label class="check"><input type="checkbox" id="c-orbit" checked> Slowly circle in 3D</label>
+    </section>
+
+    <section>
+      <h2>Field notes</h2>
+      <dl id="stats"></dl>
+    </section>
+
+    <footer>
+      <button id="btn-reset" class="ghost small" title="Back to the land as it was raised">Start over</button>
+      <button id="btn-png" class="ghost small">Save picture</button>
+      <button id="btn-link" class="ghost small">Copy link</button>
+      <button id="btn-sound" class="ghost small" title="Sound of rain">🔈 Sound</button>
+      <button id="btn-help" class="ghost small">How it works</button>
+    </footer>
+  </aside>
+</div>
+
+<div id="help" hidden>
+  <div class="sheet">
+    <button class="close" id="help-close" aria-label="Close">×</button>
+    <h2>How Watershed works</h2>
+    <p><b>Every raindrop is simulated.</b> A drop lands somewhere, rolls downhill, and speeds up on steep ground.
+      Fast water can carry more soil, so it scrapes some off the slope. When it slows down, on flat ground or when
+      climbing out of a hollow, it drops part of its load. Drops also evaporate as they go. Thousands of drops a second
+      add up to gullies, valleys, alluvial fans and, where they reach the sea, deltas.</p>
+    <p><b>Rivers and lakes</b> are worked out separately: every hollow is filled with water up to the height where
+      it would spill over, and each cell passes its water to the lowest neighbour. A cell that drains a large
+      upstream area is drawn as a river.</p>
+    <p><b>Scree</b> lets slopes steeper than about 48° slump. <b>Uplift</b> pushes the high ground up again, so the
+      land can reach a balance between mountain building and erosion instead of wearing flat.</p>
+    <h3>Keys</h3>
+    <ul class="keys">
+      <li><kbd>Space</kbd> rain on / off</li>
+      <li><kbd>V</kbd> map / 3D</li>
+      <li><kbd>B</kbd> hold to see the start</li>
+      <li><kbd>1</kbd>–<kbd>7</kbd> tools</li>
+      <li><kbd>[</kbd> <kbd>]</kbd> brush size</li>
+      <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo a stroke</li>
+      <li><kbd>R</kbd> rivers · <kbd>C</kbd> contours</li>
+      <li><kbd>N</kbd> new land, new seed</li>
+    </ul>
+    <p class="fine">The droplet model follows Hans Theobald Beyer's 2015 thesis on particle-based hydraulic erosion.
+      Lakes and drainage use the priority-flood algorithm. All of it runs in your browser.</p>
+  </div>
+</div>
+
+<noscript>Watershed needs JavaScript to make it rain.</noscript>
+<script src="js/noise.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/render2d.js"></script>
+<script src="js/render3d.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
