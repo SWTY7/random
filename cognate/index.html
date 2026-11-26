@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#efe6d2">
+<title>Cognate</title>
+<meta name="description" content="A language family grows on a continent. Watch a proto-language split into daughters through regular sound change, borrowing and drift, read every word's etymology, hear it spoken, and try the comparative method yourself.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 58 V34 M32 34 L14 14 M32 34 L50 14 M32 34 V8 M23 24 L16 30' stroke='%237a3b2a' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='14' cy='14' r='5' fill='%23c0803a'/%3E%3Ccircle cx='50' cy='14' r='5' fill='%233a7a8a'/%3E%3Ccircle cx='32' cy='8' r='5' fill='%237a8a3a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand"><b>Cognate</b><span>a family of languages, grown from one</span></div>
+    <nav id="views" class="seg">
+      <button data-view="atlas" class="on" title="Map of the languages (1)">Atlas</button>
+      <button data-view="tree" title="Family tree (2)">Tree</button>
+      <button data-view="lex" title="Compare words across languages (3)">Lexicon</button>
+      <button data-view="puzzle" title="Try the comparative method yourself (4)">Puzzles</button>
+    </nav>
+    <div id="clockbox">
+      <button id="btn-play" class="play" title="Run / pause (Space)">▶</button>
+      <div class="seg" id="seg-speed">
+        <button data-speed="1" title="Slow">1×</button>
+        <button data-speed="4" class="on" title="Normal">4×</button>
+        <button data-speed="16" title="Fast">16×</button>
+      </div>
+      <div id="clock"><b id="year">Year 0</b><div id="progress"><i></i></div></div>
+      <button id="btn-end" class="small" title="Run to the end at once">⇥ End</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="stage">
+      <div class="view on" id="view-atlas">
+        <canvas id="map"></canvas>
+        <div id="mapbar" class="glass">
+          <div class="seg" id="seg-mapmode">
+            <button data-mode="lang" class="on" title="Each language in its own colour; related ones in similar colours">Languages</button>
+            <button data-mode="word" title="One word across the map: same colour = same origin">Word map</button>
+            <button data-mode="sound" title="Where a sound is used">Sound map</button>
+          </div>
+          <select id="map-word" hidden></select>
+          <select id="map-sound" hidden></select>
+        </div>
+        <div id="maplegend" class="glass" hidden></div>
+      </div>
+      <div class="view" id="view-tree"><canvas id="treecv"></canvas>
+        <div id="treebar" class="glass"><label><input type="checkbox" id="tree-dead" checked> Show languages that died out</label><span class="dim" id="tree-note"></span></div>
+      </div>
+      <div class="view" id="view-lex"></div>
+      <div class="view" id="view-puzzle"></div>
+    </section>
+
+    <aside id="side">
+      <nav id="sidetabs">
+        <button data-tab="lang" class="on">Language</button>
+        <button data-tab="chron">Chronicle</button>
+        <button data-tab="world">World</button>
+        <button data-tab="about">About</button>
+      </nav>
+      <div class="tab on" id="tab-lang"></div>
+      <div class="tab" id="tab-chron">
+        <canvas id="chart" class="chart" height="90"></canvas>
+        <div class="seg small" id="chron-filter">
+          <button data-f="all" class="on">All</button><button data-f="split">Splits</button><button data-f="death">Deaths</button><button data-f="invent">Inventions</button><button data-f="sound">Sound laws</button>
+        </div>
+        <ol id="chron"></ol>
+      </div>
+      <div class="tab" id="tab-world">
+        <h2>World</h2>
+        <label class="row">Seed <span><input id="seed" type="text" spellcheck="false"><button id="btn-dice" class="small" title="Random seed">🎲</button></span></label>
+        <label class="row">Run for <span><select id="years"><option value="3000">3,000 years</option><option value="5000" selected>5,000 years</option><option value="8000">8,000 years</option><option value="12000">12,000 years</option></select></span></label>
+        <h2>Pace of change</h2>
+        <label class="slider">Sound change <output id="o-soundRate"></output><input type="range" id="soundRate" min="0.1" max="1.2" step="0.05"></label>
+        <p class="note">New sound laws per language per century.</p>
+        <label class="slider">Word replacement <output id="o-lexRate"></output><input type="range" id="lexRate" min="0.02" max="0.5" step="0.01"></label>
+        <p class="note">Share of basic words replaced per thousand years (the classic glottochronology figure is about 0.14).</p>
+        <label class="slider">Contact <output id="o-contact"></output><input type="range" id="contact" min="0" max="3" step="0.1"></label>
+        <p class="note">How readily neighbours borrow words from each other.</p>
+        <label class="slider">Splitting <output id="o-splitRate"></output><input type="range" id="splitRate" min="0.2" max="3" step="0.1"></label>
+        <p class="note">How soon a widespread language breaks up into daughters.</p>
+        <button id="btn-new" class="wide">Grow a new world</button>
+        <p class="note">Rates apply from now on in the running world. A new world starts from the seed. The link in the address bar remembers seed and settings.</p>
+      </div>
+      <div class="tab" id="tab-about"></div>
+    </aside>
+  </main>
+
+  <div id="tip" hidden></div>
+  <div id="modal" hidden><div id="modal-card"><button id="modal-x" title="Close (Esc)">✕</button><div id="modal-body"></div></div></div>
+  <div id="toast" hidden></div>
+</div>
+<script src="js/core.js"></script>
+<script src="js/phon.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/lexicon.js"></script>
+<script src="js/world.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/puzzle.js"></script>
+<script src="js/atlas.js"></script>
+<script src="js/tree.js"></script>
+<script src="js/lexview.js"></script>
+<script src="js/langview.js"></script>
+<script src="js/puzzleview.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
